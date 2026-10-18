@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>أرايثون - البرمجة بالعربية</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+    <h1>أرايثون</h1>
+    <p>اكتب برنامجك بالكلمات العربية، ثم اضغط «تشغيل» أو <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</p>
+</header>
+
+<main class="layout">
+    <section class="panel editor-panel">
+        <div class="panel-head">
+            <h2>الكود العربي</h2>
+            <div class="actions">
+                <select id="examples" aria-label="أمثلة">
+                    <option value="">أمثلة…</option>
+                    {% for group, items in example_groups %}
+                    <optgroup label="{{ group }}">
+                        {% for key, title, _, _ in items %}
+                        <option value="{{ key }}">{{ title }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+                <button id="run" type="button">▶ تشغيل</button>
+            </div>
+        </div>
+
+        <div class="editor" id="editor">
+            <div class="gutter" id="gutter" aria-hidden="true"></div>
+            <div class="code-wrap">
+                <pre class="highlight" id="highlight" aria-hidden="true"></pre>
+                <textarea id="code" dir="rtl" spellcheck="false" autocomplete="off"
+                          autocapitalize="off" placeholder="اكتب الكود هنا..."></textarea>
+            </div>
+        </div>
+        <div class="statusbar">
+            <span id="cursor-pos">سطر ١، عمود ١</span>
+            <span class="hint"><kbd>Tab</kbd> إزاحة · <kbd>Shift</kbd>+<kbd>Tab</kbd> إرجاع · <kbd>Ctrl</kbd>+<kbd>/</kbd> تعليق</span>
+        </div>
+
+        <label for="stdin" class="label">مدخلات البرنامج (لـ أدخل) — سطر لكل إدخال:</label>
+        <textarea id="stdin" class="stdin-area" dir="auto" spellcheck="false"></textarea>
+    </section>
+
+    <section class="panel">
+        <h2>الناتج</h2>
+        <pre id="output" class="output" dir="auto"></pre>
+
+        <details>
+            <summary>الكود المترجم إلى بايثون</summary>
+            <pre id="translated" class="python" dir="ltr"></pre>
+        </details>
+
+        <details>
+            <summary>الكلمات المتاحة</summary>
+            <table class="keywords">
+                <thead><tr><th>العربية</th><th>بايثون</th></tr></thead>
+                <tbody>
+                {% for ar, py in keywords.items() %}
+                    <tr><td>{{ ar }}</td><td dir="ltr"><code>{{ py }}</code></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </details>
+    </section>
+</main>
+
+<script>
+const KEYWORDS = {{ keywords | tojson }};
+const BUILTINS = new Set([
+    'print', 'input', 'len', 'type', 'range', 'int', 'float', 'str', 'list', 'sum', 'max', 'min',
+    'abs', 'round', 'sorted', 'dict', 'enumerate',
+    'append', 'items', 'keys', 'values', 'split', 'join', 'upper',
+]);
+const CONSTANTS = new Set(['True', 'False', 'None']);
+const INDENT = '    ';
+
+const EXAMPLES = Object.fromEntries(
+    {{ example_groups | tojson }}.flatMap(([, items]) => items.map(([key, , src, input]) => [key, { src, input }]))
+);
+
+const code = document.getElementById('code');
+const highlight = document.getElementById('highlight');
+const gutter = document.getElementById('gutter');
+const cursorPos = document.getElementById('cursor-pos');
+const stdin = document.getElementById('stdin');
+const output = document.getElementById('output');
+const translated = document.getElementById('translated');
+const runBtn = document.getElementById('run');
+
+let errorLine = null;
+
+// ---------- Syntax highlighting ----------
+const escapeHtml = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const span = (cls, text) => `<span class="tok-${cls}">${escapeHtml(text)}</span>`;
+const isIdent = ch => /[\p{L}\p{N}_ـ]/u.test(ch);
+const isDigit = ch => /[0-9٠-٩۰-۹]/.test(ch);
+
+function classify(word) {
+    const py = KEYWORDS[word];
+    if (py === undefined) return null;
+    if (CONSTANTS.has(py)) return 'const';
+    if (BUILTINS.has(py)) return 'builtin';
+    if (/^[=!<>]/.test(py)) return 'op';
+    return 'kw';
+}
+
+function highlightLine(line) {
+    let html = '';
+    let i = 0;
+
+    // Indentation guides: one dotted marker per indent level
+    const lead = line.match(/^ */)[0].length;
+    for (; i + 4 <= lead; i += 4) html += '<span class="indent">    </span>';
+    if (i < lead) { html += line.slice(i, lead); i = lead; }
+
+    let expectName = false;
+    while (i < line.length) {
+        const ch = line[i];
+        if (ch === '#') { html += span('comment', line.slice(i)); break; }
+        if (ch === '"' || ch === "'") {
+            let j = i + 1;
+            while (j < line.length && line[j] !== ch) j += line[j] === '\\' ? 2 : 1;
+            html += span('string', line.slice(i, j + 1));
+            i = j + 1;
+            continue;
+        }
+        if (isDigit(ch)) {
+            let j = i;
+            while (j < line.length && (isDigit(line[j]) || line[j] === '.' || line[j] === '٫')) j++;
+            html += span('number', line.slice(i, j));
+            i = j;
+            continue;
+        }
+        if (isIdent(ch)) {
+            let j = i;
+            while (j < line.length && isIdent(line[j])) j++;
+            const word = line.slice(i, j);
+            const cls = classify(word);
+            if (expectName) { html += span('defname', word); expectName = false; }
+            else if (cls) { html += span(cls, word); expectName = ['def', 'class'].includes(KEYWORDS[word]); }
+            else if (line[j] === '(') html += span('call', word);
+            else html += escapeHtml(word);
+            i = j;
+            continue;
+        }
+        if ('()[]{}'.includes(ch)) html += span('bracket', ch);
+        else if ('+-*/%=<>!:,،؛.'.includes(ch)) html += span('punct', ch);
+        else html += escapeHtml(ch);
+        i++;
+    }
+    return html;
+}
+
+function toArabicDigits(n) {
+    return String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+}
+
+function currentLineIndex() {
+    return code.value.slice(0, code.selectionStart).split('\n').length - 1;
+}
+
+function render() {
+    const lines = code.value.split('\n');
+    const active = currentLineIndex();
+    highlight.innerHTML = lines.map((l, idx) => {
+        const cls = ['line'];
+        if (idx === active) cls.push('active');
+        if (idx + 1 === errorLine) cls.push('error-line');
+        return `<div class="${cls.join(' ')}">${highlightLine(l) || ' '}</div>`;
+    }).join('');
+    gutter.innerHTML = lines.map((_, idx) => {
+        const cls = idx === active ? 'active' : idx + 1 === errorLine ? 'error' : '';
+        return `<div class="${cls}">${toArabicDigits(idx + 1)}</div>`;
+    }).join('');
+    const col = code.selectionStart - code.value.lastIndexOf('\n', code.selectionStart - 1);
+    cursorPos.textContent = `سطر ${toArabicDigits(active + 1)}، عمود ${toArabicDigits(col)}`;
+    syncScroll();
+}
+
+function syncScroll() {
+    highlight.scrollTop = code.scrollTop;
+    highlight.scrollLeft = code.scrollLeft;
+    gutter.scrollTop = code.scrollTop;
+}
+
+// ---------- Editing helpers ----------
+function lineStartsOfSelection() {
+    const v = code.value;
+    const start = v.lastIndexOf('\n', code.selectionStart - 1) + 1;
+    const end = code.selectionEnd;
+    return { start, end, text: v.slice(start, end) };
+}
+
+function replaceRange(start, end, text, selStart, selEnd) {
+    code.setSelectionRange(start, end);
+    // execCommand keeps the browser's undo history working
+    if (!document.execCommand('insertText', false, text)) code.setRangeText(text, start, end);
+    code.setSelectionRange(selStart ?? start + text.length, selEnd ?? selStart ?? start + text.length);
+}
+
+function indentSelection(dedent) {
+    const { start, end, text } = lineStartsOfSelection();
+    const changed = text.split('\n').map(l => dedent ? l.replace(/^ {1,4}/, '') : INDENT + l).join('\n');
+    if (changed === text) return;
+    if (code.selectionStart === code.selectionEnd) {
+        // Single caret: shift it with its line
+        const caret = Math.max(start, code.selectionStart + changed.length - text.length);
+        replaceRange(start, end, changed, caret, caret);
+    } else {
+        replaceRange(start, end, changed, start, start + changed.length);
+    }
+}
+
+function toggleComment() {
+    const { start, end, text } = lineStartsOfSelection();
+    const lines = text.split('\n');
+    const allCommented = lines.every(l => /^\s*#/.test(l) || !l.trim());
+    const changed = lines.map(l => {
+        if (!l.trim()) return l;
+        return allCommented ? l.replace(/^(\s*)# ?/, '$1') : l.replace(/^(\s*)/, '$1# ');
+    }).join('\n');
+    replaceRange(start, end, changed, start, start + changed.length);
+}
+
+const PAIRS = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
+
+code.addEventListener('keydown', e => {
+    const { selectionStart: s, selectionEnd: en, value: v } = code;
+
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); return; }
+    if (e.key === '/' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); toggleComment(); return; }
+
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        if (e.shiftKey || s !== en) indentSelection(e.shiftKey);
+        else replaceRange(s, en, INDENT);
+        return;
+    }
+
+    // Auto-indent: keep current indentation, add a level after ':'
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const lineStart = v.lastIndexOf('\n', s - 1) + 1;
+        const before = v.slice(lineStart, s);
+        let indent = before.match(/^ */)[0];
+        const trimmed = before.replace(/#.*$/, '').trimEnd();
+        if (trimmed.endsWith(':')) indent += INDENT;
+        else if (/^\s*(أرجع|اكسر|استمرار|يمر|رفع)\b/u.test(before)) indent = indent.slice(4);
+        replaceRange(s, en, '\n' + indent);
+        return;
+    }
+
+    // Backspace inside indentation removes a whole level
+    if (e.key === 'Backspace' && s === en && s > 0) {
+        const lineStart = v.lastIndexOf('\n', s - 1) + 1;
+        const before = v.slice(lineStart, s);
+        if (before.length && /^ +$/.test(before)) {
+            e.preventDefault();
+            const remove = before.length % 4 || 4;
+            replaceRange(s - remove, s, '');
+            return;
+        }
+        if (PAIRS[v[s - 1]] && PAIRS[v[s - 1]] === v[s]) {
+            e.preventDefault();
+            replaceRange(s - 1, s + 1, '');
+            return;
+        }
+    }
+
+    // Skip over an auto-inserted closing character
+    if ([')', ']', '}', '"', "'"].includes(e.key) && s === en && v[s] === e.key) {
+        e.preventDefault();
+        code.setSelectionRange(s + 1, s + 1);
+        render();
+        return;
+    }
+
+    // Auto-close brackets and quotes
+    if (PAIRS[e.key] && !e.ctrlKey && !e.metaKey) {
+        const isQuote = e.key === '"' || e.key === "'";
+        if (isQuote && s === en && isIdent(v[s - 1] || '')) return;
+        e.preventDefault();
+        const inner = v.slice(s, en);
+        replaceRange(s, en, e.key + inner + PAIRS[e.key], s + 1, s + 1 + inner.length);
+    }
+});
+
+code.addEventListener('input', () => { errorLine = null; render(); });
+code.addEventListener('scroll', syncScroll);
+['click', 'keyup', 'select', 'focus'].forEach(ev => code.addEventListener(ev, render));
+document.addEventListener('selectionchange', () => { if (document.activeElement === code) render(); });
+
+// ---------- Examples & running ----------
+document.getElementById('examples').addEventListener('change', e => {
+    if (!e.target.value) return;
+    const ex = EXAMPLES[e.target.value];
+    code.value = ex.src.trimEnd();
+    stdin.value = ex.input;
+    e.target.value = '';
+    errorLine = null;
+    code.focus();
+    code.setSelectionRange(0, 0);
+    render();
+});
+runBtn.addEventListener('click', run);
+
+async function run() {
+    runBtn.disabled = true;
+    output.className = 'output';
+    output.textContent = 'جارٍ التشغيل…';
+    try {
+        const res = await fetch('/api/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code.value, stdin: stdin.value }),
+        });
+        const data = await res.json();
+        output.textContent = data.output || '(لا يوجد ناتج)';
+        output.classList.toggle('error', data.error);
+        translated.textContent = data.translated;
+        const m = data.error && data.output.match(/line (\d+)/);
+        errorLine = m ? Number(m[1]) : null;
+    } catch (err) {
+        output.textContent = 'تعذّر الاتصال بالخادم: ' + err;
+        output.classList.add('error');
+    } finally {
+        runBtn.disabled = false;
+        render();
+    }
+}
+
+render();
+</script>
+</body>
+</html>
