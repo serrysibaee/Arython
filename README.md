@@ -1,4 +1,4 @@
-<div dir="rtl" align="center">
+﻿<div dir="rtl" align="center">
 
 # أرايثون · Arython
 
@@ -52,7 +52,7 @@ Arython is a small web app that lets you write Python programs using **Arabic ke
 Requires Python 3.10+.
 
 ```bash
-git clone https://github.com/<your-username>/Arython.git
+git clone https://github.com/serrysibaee/Arython.git
 cd Arython
 pip install -r requirements.txt
 uvicorn main:app --reload
