@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>دفتر أرايثون</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="nb-body">
+<header class="nb-header">
+    <nav class="topnav">
+        <h1>أرايثون</h1>
+        <a href="/">المحرر</a>
+        <a href="/notebook" class="active">الدفتر التفاعلي</a>
+    </nav>
+    <div class="nb-titlebar">
+        <input id="nb-title" class="nb-title" value="دفتر بلا عنوان" aria-label="اسم الدفتر" spellcheck="false">
+        <span id="kernel-status" class="kernel-status" data-state="connecting">
+            <span class="dot"></span><span class="label">جارٍ الاتصال…</span>
+        </span>
+    </div>
+    <div class="nb-toolbar" role="toolbar">
+        <button type="button" data-action="add-code" class="ghost">+ كود</button>
+        <button type="button" data-action="add-text" class="ghost">+ نص</button>
+        <span class="sep"></span>
+        <button type="button" data-action="run-all" class="ghost">▶ تشغيل الكل</button>
+        <button type="button" data-action="interrupt" class="ghost">■ إيقاف</button>
+        <button type="button" data-action="restart" class="ghost">↻ إعادة تشغيل النواة</button>
+        <button type="button" data-action="clear-outputs" class="ghost">⌫ مسح النواتج</button>
+        <span class="sep"></span>
+        <button type="button" data-action="new" class="ghost">📄 جديد</button>
+        <button type="button" data-action="open" class="ghost">📂 فتح</button>
+        <button type="button" data-action="save" class="ghost">💾 حفظ</button>
+        <button type="button" data-action="export" class="ghost" title="تنزيل كدفتر Jupyter بلغة بايثون">⤓ ipynb</button>
+        <input type="file" id="open-file" accept=".arnb,.json" hidden>
+    </div>
+</header>
+
+<main id="cells" class="nb-cells"></main>
+
+<footer class="nb-footer">
+    <span><kbd>Shift</kbd>+<kbd>Enter</kbd> تشغيل والانتقال</span>
+    <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> تشغيل الخلية</span>
+    <span><kbd>Alt</kbd>+<kbd>Enter</kbd> تشغيل وإضافة خلية</span>
+    <span>انقر مرتين على خلية النص لتحريرها</span>
+</footer>
+
+<script>window.ARYTHON_KEYWORDS = {{ keywords | tojson }};</script>
+<script type="module" src="/static/notebook.js"></script>
+</body>
+</html>

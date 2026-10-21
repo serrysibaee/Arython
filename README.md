@@ -1,4 +1,4 @@
-﻿<div dir="rtl" align="center">
+<div dir="rtl" align="center">
 
 # أرايثون · Arython
 
@@ -25,6 +25,15 @@ Arython is a small web app that lets you write Python programs using **Arabic ke
 مضروب ٥ = 120
 ```
 
+## Two ways to code
+
+| | **Editor** (`/`) | **Interactive notebook** (`/notebook`) |
+|---|---|---|
+| Style | One program, run all at once | Colab/Jupyter-style cells |
+| Variables | Fresh on every run | Kept between cells |
+| Input (`أدخل`) | Typed in advance, one line per call | Asked for live in a box under the cell |
+| Best for | Short programs, examples | Teaching, step-by-step exploration |
+
 ## Features
 
 - **Arabic keywords and built-ins:** `اطبع` → `print`, `إذا` → `if`, `لكل` → `for`, `دالة` → `def`, `صنف` → `class`, and more.
@@ -44,6 +53,14 @@ Arython is a small web app that lets you write Python programs using **Arabic ke
   - Brackets and quotes close automatically
   - Ctrl+Enter runs the code
 - **Program input:** a box for the text that `أدخل()` reads.
+- **Interactive notebook:**
+  - Code cells and text (Markdown) cells
+  - One shared Python session, so variables persist between cells, and the last expression's value is shown
+  - Run counters `[١]`, `[٢]`, and Run All / Stop / Restart kernel buttons
+  - Live `أدخل()` prompts under the cell
+  - Errors in Arabic, with the failing line highlighted in red
+  - Shows the translated Python of each cell
+  - Saved automatically in the browser; save and open `.arnb` files, or export to Jupyter `.ipynb` in Python
 - **Built-in examples:** 19 example programs in 5 groups, from "Hello World" to classes and a guessing game.
 - **Separate process:** each run happens in its own Python process with a 5-second time limit, and errors are shown in Arabic.
 
@@ -58,7 +75,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Then open <http://127.0.0.1:8000>.
+Then open <http://127.0.0.1:8000> for the editor, or <http://127.0.0.1:8000/notebook> for the notebook.
 
 ## Keyword reference
 
@@ -88,26 +105,34 @@ The full list is in `ARABIC_TO_PYTHON` in [`arabic_translator.py`](arabic_transl
 
 1. `translate_to_python()` reads the code character by character. It copies strings and comments unchanged, swaps Arabic keywords for Python ones, and converts Arabic digits and punctuation. Because it works word by word, line numbers in error messages still match your Arabic code.
 2. `run_arabic_code()` runs the translated code in a separate Python process (`python -I -X utf8 -c …`), passes it the program input, stops it after 5 seconds, and reduces errors to a short Arabic message with the line number.
-3. The editor is a transparent `<textarea>` laid over a colored `<pre>`. It is plain HTML, CSS and JavaScript, with no external libraries.
+3. **Notebook:** each browser tab opens a WebSocket (`/ws/notebook`) and gets its own kernel (`kernel.py`), a Python process that runs every cell in one shared namespace. **Stop** sends Ctrl+Break on Windows (SIGINT elsewhere), which interrupts the cell without losing variables; if the cell doesn't stop within 2 seconds, the kernel is restarted.
+4. The editor is a transparent `<textarea>` laid over a colored `<pre>`. It is plain HTML, CSS and JavaScript, with no external libraries.
 
 ## Project structure
 
 ```
-├── main.py               # FastAPI app: page + /api/run endpoint
-├── arabic_translator.py  # Keyword map, translator, and code runner
-├── examples.py           # Example programs shown in the editor
-├── templates/index.html  # Editor UI (RTL) and highlighter
-└── static/style.css      # Styles and light/dark themes
+├── main.py                  # FastAPI app: pages, /api/run, /api/translate, /ws/notebook
+├── arabic_translator.py     # Keyword map, translator, and one-shot code runner
+├── kernel.py                # Notebook kernel process (shared namespace per notebook)
+├── kernel_manager.py        # Starts kernels and relays messages over WebSocket
+├── examples.py              # Example programs shown in the editor
+├── templates/
+│   ├── index.html           # Single-file editor page
+│   └── notebook.html        # Notebook page
+└── static/
+    ├── editor.js            # Shared RTL code editor + syntax highlighter
+    ├── notebook.js          # Notebook cells, outputs, save/load, kernel connection
+    └── style.css            # Styles and light/dark themes
 ```
 
 ## Adding keywords and examples
 
-- **New keyword:** add `'العربية': 'python'` to `ARABIC_TO_PYTHON` in `arabic_translator.py`. If it is a built-in function or method, also add the Python name to `BUILTINS` in `templates/index.html` so it gets the built-in color.
+- **New keyword:** add `'العربية': 'python'` to `ARABIC_TO_PYTHON` in `arabic_translator.py`. If it is a built-in function or method, also add the Python name to `BUILTINS` in `static/editor.js` so it gets the built-in color.
 - **New example:** add a `(key, title, code, stdin)` entry to a group in `examples.py`. It appears in the menu automatically.
 
 ## ⚠️ Security note
 
-Code runs in a separate process with a time limit, but it is **not sandboxed**: it can read files, use the network and run commands with the server's permissions. Run Arython on your own machine or in a classroom, and don't expose it to the public internet without real isolation, such as a container with no network and a read-only file system.
+Code runs in a separate process (the editor also has a time limit; notebook cells run until stopped), but it is **not sandboxed**: it can read files, use the network and run commands with the server's permissions. Run Arython on your own machine or in a classroom, and don't expose it to the public internet without real isolation, such as a container with no network and a read-only file system.
 
 ## Known limitations
 
