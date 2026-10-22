@@ -83,7 +83,6 @@ Then open <http://127.0.0.1:8000> for the editor, or <http://127.0.0.1:8000/note
 
 The [online version](https://serrysibaee.github.io/Arython/) needs no server: Python runs in the visitor's browser with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), inside a Web Worker. It uses the same templates, editor, translator and `kernel.py`.
 
-- Every push to `main` rebuilds and deploys it (`.github/workflows/pages.yml`). In the repo settings, **Pages → Source** must be set to **GitHub Actions**.
 - To build and preview it locally:
 
   ```bash
@@ -91,6 +90,8 @@ The [online version](https://serrysibaee.github.io/Arython/) needs no server: Py
   python web/build.py                       # writes _site/
   python -m http.server -d _site 8000       # open http://localhost:8000
   ```
+
+- To publish, push the contents of `_site/` to the `gh-pages` branch, which Pages serves (**Settings → Pages → Deploy from a branch → `gh-pages`**).
 
 - Live `أدخل` input and the **Stop** button need shared memory, which browsers only allow on cross-origin-isolated pages. GitHub Pages can't set those headers, so `coi-serviceworker.js` adds them; the first visit reloads the page once.
 - The first run downloads Pyodide (about 10 MB), then the browser caches it.
