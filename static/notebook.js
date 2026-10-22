@@ -1,5 +1,7 @@
-// Arython notebook: code and text cells sharing one kernel over a WebSocket.
-import { createEditor, escapeHtml, toArabicDigits } from '/static/editor.js';
+// Arython notebook: code and text cells sharing one kernel over a WebSocket
+// (or, in the GitHub Pages build, a Pyodide kernel in the browser).
+import { createEditor, escapeHtml, toArabicDigits } from './editor.js';
+import { BrowserKernel } from './browser-python.js';
 
 const STORAGE_KEY = 'arython.notebook';
 const MAX_OUTPUT_CHARS = 200_000;
@@ -381,6 +383,7 @@ function handleMessage(msg) {
 // ---------- Kernel connection ----------
 const KERNEL_LABELS = {
     connecting: 'جارٍ الاتصال…',
+    loading: 'جارٍ تحميل بايثون…',
     idle: 'النواة جاهزة',
     busy: 'النواة مشغولة',
     restarting: 'إعادة تشغيل النواة…',
@@ -403,8 +406,12 @@ function send(msg) {
 
 function connect() {
     setKernelState('connecting');
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(`${proto}://${location.host}/ws/notebook`);
+    if (window.ARYTHON_MODE === 'browser') {
+        ws = new BrowserKernel();
+    } else {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(`${proto}://${location.host}/ws/notebook`);
+    }
     ws.onmessage = e => handleMessage(JSON.parse(e.data));
     ws.onclose = () => {
         setKernelState('disconnected');
@@ -472,12 +479,11 @@ const safeName = () => (titleEl.value.trim() || 'دفتر').replace(/[\\/:*?"<>|
 
 async function exportIpynb() {
     const codes = cells.filter(c => c.type === 'code').map(c => c.editor.value);
-    const res = await fetch('/api/translate', {
+    const translated = ws instanceof BrowserKernel ? await ws.translate(codes) : (await (await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ codes }),
-    });
-    const { translated } = await res.json();
+    })).json()).translated;
     let k = 0;
     const toLines = s => s.split('\n').map((l, i, a) => i < a.length - 1 ? l + '\n' : l);
     const nb = {

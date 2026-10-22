@@ -288,7 +288,8 @@ kbd {
 .kernel-status[data-state="idle"] .dot { background: var(--accent); }
 .kernel-status[data-state="busy"] .dot { background: #e3a008; animation: pulse 1s infinite; }
 .kernel-status[data-state="restarting"] .dot,
-.kernel-status[data-state="connecting"] .dot { background: #e3a008; }
+.kernel-status[data-state="connecting"] .dot,
+.kernel-status[data-state="loading"] .dot { background: #e3a008; }
 .kernel-status[data-state="disconnected"] { color: var(--error); cursor: pointer; }
 .kernel-status[data-state="disconnected"] .dot { background: var(--error); }
 @keyframes pulse { 50% { opacity: 0.3; } }

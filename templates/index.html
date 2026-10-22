@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if mode == 'browser' %}<script src="coi-serviceworker.js"></script>{% endif %}
     <title>أرايثون - البرمجة بالعربية</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ static_url }}/style.css">
 </head>
 <body>
 <header>
     <nav class="topnav">
         <h1>أرايثون</h1>
-        <a href="/" class="active">المحرر</a>
-        <a href="/notebook">الدفتر التفاعلي</a>
+        <a href="{{ home_url }}" class="active">المحرر</a>
+        <a href="{{ notebook_url }}">الدفتر التفاعلي</a>
     </nav>
     <p>اكتب برنامجك بالكلمات العربية، ثم اضغط «تشغيل» أو <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</p>
 </header>
@@ -68,9 +69,13 @@
     </section>
 </main>
 
-<script>window.ARYTHON_KEYWORDS = {{ keywords | tojson }};</script>
+<script>window.ARYTHON_KEYWORDS = {{ keywords | tojson }}; window.ARYTHON_MODE = {{ mode | tojson }};</script>
 <script type="module">
-import { createEditor, toArabicDigits } from '/static/editor.js';
+import { createEditor, toArabicDigits } from '{{ static_url }}/editor.js';
+import { ScriptRunner } from '{{ static_url }}/browser-python.js';
+
+// GitHub Pages build: Python runs in the browser instead of on the server
+const runner = window.ARYTHON_MODE === 'browser' ? new ScriptRunner() : null;
 
 const EXAMPLES = Object.fromEntries(
     {{ example_groups | tojson }}.flatMap(([, items]) => items.map(([key, , src, input]) => [key, { src, input }]))
@@ -103,15 +108,14 @@ runBtn.addEventListener('click', run);
 async function run() {
     runBtn.disabled = true;
     output.className = 'output';
-    output.textContent = 'جارٍ التشغيل…';
+    output.textContent = runner && !runner.ready ? 'جارٍ تحميل بايثون في المتصفح… (المرة الأولى أبطأ)' : 'جارٍ التشغيل…';
     let errorLine = null;
     try {
-        const res = await fetch('/api/run', {
+        const data = runner ? await runner.run(editor.value, stdin.value) : await (await fetch('/api/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: editor.value, stdin: stdin.value }),
-        });
-        const data = await res.json();
+        })).json();
         output.textContent = data.output || '(لا يوجد ناتج)';
         output.classList.toggle('error', data.error);
         translated.textContent = data.translated;

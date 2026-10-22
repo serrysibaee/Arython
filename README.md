@@ -4,6 +4,8 @@
 
 **اكتب بايثون بالعربية** — Write Python in Arabic
 
+**[▶ Try it online](https://serrysibaee.github.io/Arython/)** · runs entirely in your browser
+
 </div>
 
 Arython is a small web app that lets you write Python programs using **Arabic keywords**. Code is typed in a right-to-left editor with syntax highlighting, translated to standard Python, and run on the server, showing both the output and the translated code.
@@ -77,6 +79,22 @@ uvicorn main:app --reload
 
 Then open <http://127.0.0.1:8000> for the editor, or <http://127.0.0.1:8000/notebook> for the notebook.
 
+### Browser-only version (GitHub Pages)
+
+The [online version](https://serrysibaee.github.io/Arython/) needs no server: Python runs in the visitor's browser with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), inside a Web Worker. It uses the same templates, editor, translator and `kernel.py`.
+
+- Every push to `main` rebuilds and deploys it (`.github/workflows/pages.yml`). In the repo settings, **Pages → Source** must be set to **GitHub Actions**.
+- To build and preview it locally:
+
+  ```bash
+  pip install jinja2
+  python web/build.py                       # writes _site/
+  python -m http.server -d _site 8000       # open http://localhost:8000
+  ```
+
+- Live `أدخل` input and the **Stop** button need shared memory, which browsers only allow on cross-origin-isolated pages. GitHub Pages can't set those headers, so `coi-serviceworker.js` adds them; the first visit reloads the page once.
+- The first run downloads Pyodide (about 10 MB), then the browser caches it.
+
 ## Keyword reference
 
 | العربية | Python | | العربية | Python |
@@ -116,12 +134,18 @@ The full list is in `ARABIC_TO_PYTHON` in [`arabic_translator.py`](arabic_transl
 ├── kernel.py                # Notebook kernel process (shared namespace per notebook)
 ├── kernel_manager.py        # Starts kernels and relays messages over WebSocket
 ├── examples.py              # Example programs shown in the editor
+├── web/                     # Browser-only build for GitHub Pages
+│   ├── build.py             # Renders the templates into a static site in _site/
+│   ├── browser_runtime.py   # Runs editor programs and notebook cells inside Pyodide
+│   └── coi-serviceworker.js # Enables cross-origin isolation (third-party, MIT)
 ├── templates/
 │   ├── index.html           # Single-file editor page
 │   └── notebook.html        # Notebook page
 └── static/
     ├── editor.js            # Shared RTL code editor + syntax highlighter
     ├── notebook.js          # Notebook cells, outputs, save/load, kernel connection
+    ├── browser-python.js    # Pages build: in-browser kernel and editor runner
+    ├── pyworker.js          # Pages build: Web Worker that loads Pyodide
     └── style.css            # Styles and light/dark themes
 ```
 
@@ -132,7 +156,9 @@ The full list is in `ARABIC_TO_PYTHON` in [`arabic_translator.py`](arabic_transl
 
 ## ⚠️ Security note
 
-Code runs in a separate process (the editor also has a time limit; notebook cells run until stopped), but it is **not sandboxed**: it can read files, use the network and run commands with the server's permissions. Run Arython on your own machine or in a classroom, and don't expose it to the public internet without real isolation, such as a container with no network and a read-only file system.
+This applies to the server version. The online version is safe to share: code runs in each visitor's own browser sandbox.
+
+On the server, code runs in a separate process (the editor also has a time limit; notebook cells run until stopped), but it is **not sandboxed**: it can read files, use the network and run commands with the server's permissions. Run Arython on your own machine or in a classroom, and don't expose it to the public internet without real isolation, such as a container with no network and a read-only file system.
 
 ## Known limitations
 

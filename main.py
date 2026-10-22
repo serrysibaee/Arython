@@ -12,6 +12,9 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# Page links and where Python runs; web/build.py renders the same templates for GitHub Pages
+PAGE_CONTEXT = {"mode": "server", "home_url": "/", "notebook_url": "/notebook", "static_url": "/static"}
+
 
 class RunRequest(BaseModel):
     code: str
@@ -20,12 +23,12 @@ class RunRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse(request, "index.html", {"keywords": ARABIC_TO_PYTHON, "example_groups": EXAMPLE_GROUPS})
+    return templates.TemplateResponse(request, "index.html", {**PAGE_CONTEXT, "keywords": ARABIC_TO_PYTHON, "example_groups": EXAMPLE_GROUPS})
 
 
 @app.get("/notebook", response_class=HTMLResponse)
 async def notebook(request: Request):
-    return templates.TemplateResponse(request, "notebook.html", {"keywords": ARABIC_TO_PYTHON})
+    return templates.TemplateResponse(request, "notebook.html", {**PAGE_CONTEXT, "keywords": ARABIC_TO_PYTHON})
 
 
 # Each open notebook gets its own kernel, so variables persist between cells

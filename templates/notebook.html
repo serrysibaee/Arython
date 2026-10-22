@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if mode == 'browser' %}<script src="coi-serviceworker.js"></script>{% endif %}
     <title>دفتر أرايثون</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ static_url }}/style.css">
 </head>
 <body class="nb-body">
 <header class="nb-header">
     <nav class="topnav">
         <h1>أرايثون</h1>
-        <a href="/">المحرر</a>
-        <a href="/notebook" class="active">الدفتر التفاعلي</a>
+        <a href="{{ home_url }}">المحرر</a>
+        <a href="{{ notebook_url }}" class="active">الدفتر التفاعلي</a>
     </nav>
     <div class="nb-titlebar">
         <input id="nb-title" class="nb-title" value="دفتر بلا عنوان" aria-label="اسم الدفتر" spellcheck="false">
@@ -45,7 +46,7 @@
     <span>انقر مرتين على خلية النص لتحريرها</span>
 </footer>
 
-<script>window.ARYTHON_KEYWORDS = {{ keywords | tojson }};</script>
-<script type="module" src="/static/notebook.js"></script>
+<script>window.ARYTHON_KEYWORDS = {{ keywords | tojson }}; window.ARYTHON_MODE = {{ mode | tojson }};</script>
+<script type="module" src="{{ static_url }}/notebook.js"></script>
 </body>
 </html>
