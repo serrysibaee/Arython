@@ -96,6 +96,47 @@ The [online version](https://serrysibaee.github.io/Arython/) needs no server: Py
 - Live `أدخل` input and the **Stop** button need shared memory, which browsers only allow on cross-origin-isolated pages. GitHub Pages can't set those headers, so `coi-serviceworker.js` adds them; the first visit reloads the page once.
 - The first run downloads Pyodide (about 10 MB), then the browser caches it.
 
+## Standalone interpreter (Rust)
+
+`compiler/` holds `arython`, a standalone interpreter for the language written in Rust. It doesn't need Python: one 680 KB executable with no dependencies that starts in about 6 ms.
+
+```bash
+cd compiler
+cargo build --release            # builds target/release/arython(.exe)
+
+arython برنامج.ary               # run a program
+arython -c "اطبع(١ + ١)"          # run code directly
+arython                          # interactive prompt (REPL)
+```
+
+It has its own lexer, parser and interpreter, and error messages are fully in Arabic:
+
+```
+⚠ نوع غير مناسب (TypeError): لا يمكن تطبيق '+' على نص وعدد_صحيح (حوّل الرقم إلى نص بـ نص() أو النص إلى رقم بـ عدد_صحيح())
+  في السطر ٣
+```
+
+**What it supports:**
+- Everything in the keyword table.
+- Functions with default, `*args` and `**kwargs` parameters, closures, and `lambda`.
+- Classes with inheritance, `super()` and special methods (`__str__`, `__eq__`, `__add__`, …).
+- Exceptions, including your own exception classes.
+- Lists, tuples, dicts, slices, comprehensions, f-strings with format specs, `str.format`, and `%` formatting.
+- The `math`, `random` and `time` modules.
+
+**Not supported yet:** sets, generators (`yield`), `with`, decorators, and other modules. Integers are 64-bit, so going past that limit raises `OverflowError` instead of growing like Python's.
+
+**Testing:** `python compiler/tests/compare.py` runs every example in `examples.py`, plus the programs in `compiler/tests/cases/`, with both CPython and `arython`. It checks that the output is identical.
+
+**Speed** compared with CPython 3.13 (whole programs, including startup):
+
+| Program | CPython | arython |
+|---|---|---|
+| Recursive Fibonacci (27) | 0.09 s | 0.08 s |
+| Arithmetic loop (3M iterations) | 0.30 s | 0.19 s |
+| Lists, dicts, strings | 0.18 s | 0.16 s |
+| Creating objects and calling methods | 0.15 s | 0.17 s |
+
 ## Keyword reference
 
 | العربية | Python | | العربية | Python |
@@ -135,6 +176,16 @@ The full list is in `ARABIC_TO_PYTHON` in [`arabic_translator.py`](arabic_transl
 ├── kernel.py                # Notebook kernel process (shared namespace per notebook)
 ├── kernel_manager.py        # Starts kernels and relays messages over WebSocket
 ├── examples.py              # Example programs shown in the editor
+├── compiler/                # Standalone interpreter in Rust (no Python needed)
+│   ├── src/lexer.rs         # Arabic source → tokens (keyword table, digits, punctuation)
+│   ├── src/parser.rs        # Tokens → syntax tree
+│   ├── src/resolve.rs       # Assigns every variable a slot (local, closure cell or global)
+│   ├── src/interp.rs        # Runs the syntax tree
+│   ├── src/builtins.rs      # Built-in functions, methods, modules, formatting
+│   ├── src/value.rs         # Runtime values
+│   ├── src/alloc.rs         # Fast small-object allocator
+│   ├── src/main.rs          # Command line, REPL, Arabic error messages
+│   └── tests/compare.py     # Checks the output matches CPython
 ├── web/                     # Browser-only build for GitHub Pages
 │   ├── build.py             # Renders the templates into a static site in _site/
 │   ├── browser_runtime.py   # Runs editor programs and notebook cells inside Pyodide
@@ -152,7 +203,7 @@ The full list is in `ARABIC_TO_PYTHON` in [`arabic_translator.py`](arabic_transl
 
 ## Adding keywords and examples
 
-- **New keyword:** add `'العربية': 'python'` to `ARABIC_TO_PYTHON` in `arabic_translator.py`. If it is a built-in function or method, also add the Python name to `BUILTINS` in `static/editor.js` so it gets the built-in color.
+- **New keyword:** add `'العربية': 'python'` to `ARABIC_TO_PYTHON` in `arabic_translator.py`, and the same pair to `ARABIC_WORDS` in `compiler/src/lexer.rs`. If it is a built-in function or method, also add the Python name to `BUILTINS` in `static/editor.js` so it gets the built-in color.
 - **New example:** add a `(key, title, code, stdin)` entry to a group in `examples.py`. It appears in the menu automatically.
 
 ## ⚠️ Security note
