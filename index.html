@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="coi-serviceworker.js"></script>
+    <title>أرايثون - البرمجة بالعربية</title>
+    <link rel="stylesheet" href="./static/style.css">
+</head>
+<body>
+<header>
+    <nav class="topnav">
+        <h1>أرايثون</h1>
+        <a href="./" class="active">المحرر</a>
+        <a href="notebook.html">الدفتر التفاعلي</a>
+    </nav>
+    <p>اكتب برنامجك بالكلمات العربية، ثم اضغط «تشغيل» أو <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</p>
+</header>
+
+<main class="layout">
+    <section class="panel editor-panel">
+        <div class="panel-head">
+            <h2>الكود العربي</h2>
+            <div class="actions">
+                <select id="examples" aria-label="أمثلة">
+                    <option value="">أمثلة…</option>
+                    
+                    <optgroup label="أساسيات">
+                        
+                        <option value="hello">مرحبا بالعالم</option>
+                        
+                        <option value="vars">المتغيرات والحساب</option>
+                        
+                        <option value="input">إدخال المستخدم</option>
+                        
+                        <option value="fstring">النصوص المنسقة</option>
+                        
+                    </optgroup>
+                    
+                    <optgroup label="الشروط والحلقات">
+                        
+                        <option value="grade">تقدير الدرجة</option>
+                        
+                        <option value="loop">زوجي أم فردي</option>
+                        
+                        <option value="while">العد التنازلي</option>
+                        
+                        <option value="table">جدول الضرب</option>
+                        
+                        <option value="primes">الأعداد الأولية</option>
+                        
+                        <option value="stars">هرم النجوم</option>
+                        
+                    </optgroup>
+                    
+                    <optgroup label="الدوال">
+                        
+                        <option value="func">دالة عودية (المضروب)</option>
+                        
+                        <option value="fib">متتالية فيبوناتشي</option>
+                        
+                        <option value="calc">آلة حاسبة</option>
+                        
+                    </optgroup>
+                    
+                    <optgroup label="هياكل البيانات">
+                        
+                        <option value="lists">القوائم</option>
+                        
+                        <option value="dict">دليل الهاتف (قاموس)</option>
+                        
+                        <option value="words">تحليل جملة</option>
+                        
+                    </optgroup>
+                    
+                    <optgroup label="متقدم">
+                        
+                        <option value="errors">معالجة الأخطاء</option>
+                        
+                        <option value="class">الأصناف (طالب)</option>
+                        
+                        <option value="guess">لعبة التخمين</option>
+                        
+                    </optgroup>
+                    
+                </select>
+                <button id="run" type="button">▶ تشغيل</button>
+            </div>
+        </div>
+
+        <div id="editor" class="editor-fixed"></div>
+        <div class="statusbar">
+            <span id="cursor-pos">سطر ١، عمود ١</span>
+            <span class="hint"><kbd>Tab</kbd> إزاحة · <kbd>Shift</kbd>+<kbd>Tab</kbd> إرجاع · <kbd>Ctrl</kbd>+<kbd>/</kbd> تعليق</span>
+        </div>
+
+        <label for="stdin" class="label">مدخلات البرنامج (لـ أدخل) — سطر لكل إدخال:</label>
+        <textarea id="stdin" class="stdin-area" dir="auto" spellcheck="false"></textarea>
+    </section>
+
+    <section class="panel">
+        <h2>الناتج</h2>
+        <pre id="output" class="output" dir="auto"></pre>
+
+        <details>
+            <summary>الكود المترجم إلى بايثون</summary>
+            <pre id="translated" class="python" dir="ltr"></pre>
+        </details>
+
+        <details>
+            <summary>الكلمات المتاحة</summary>
+            <table class="keywords">
+                <thead><tr><th>العربية</th><th>بايثون</th></tr></thead>
+                <tbody>
+                
+                    <tr><td>اطبع</td><td dir="ltr"><code>print</code></td></tr>
+                
+                    <tr><td>إذا</td><td dir="ltr"><code>if</code></td></tr>
+                
+                    <tr><td>وإلا_إذا</td><td dir="ltr"><code>elif</code></td></tr>
+                
+                    <tr><td>وإلا</td><td dir="ltr"><code>else</code></td></tr>
+                
+                    <tr><td>بينما</td><td dir="ltr"><code>while</code></td></tr>
+                
+                    <tr><td>لكل</td><td dir="ltr"><code>for</code></td></tr>
+                
+                    <tr><td>في</td><td dir="ltr"><code>in</code></td></tr>
+                
+                    <tr><td>في_ضمن</td><td dir="ltr"><code>in</code></td></tr>
+                
+                    <tr><td>دالة</td><td dir="ltr"><code>def</code></td></tr>
+                
+                    <tr><td>أرجع</td><td dir="ltr"><code>return</code></td></tr>
+                
+                    <tr><td>استمرار</td><td dir="ltr"><code>continue</code></td></tr>
+                
+                    <tr><td>اكسر</td><td dir="ltr"><code>break</code></td></tr>
+                
+                    <tr><td>حاول</td><td dir="ltr"><code>try</code></td></tr>
+                
+                    <tr><td>عدا</td><td dir="ltr"><code>except</code></td></tr>
+                
+                    <tr><td>أخيرا</td><td dir="ltr"><code>finally</code></td></tr>
+                
+                    <tr><td>مع</td><td dir="ltr"><code>with</code></td></tr>
+                
+                    <tr><td>كـ</td><td dir="ltr"><code>as</code></td></tr>
+                
+                    <tr><td>استيراد</td><td dir="ltr"><code>import</code></td></tr>
+                
+                    <tr><td>من</td><td dir="ltr"><code>from</code></td></tr>
+                
+                    <tr><td>صحيح</td><td dir="ltr"><code>True</code></td></tr>
+                
+                    <tr><td>خطأ</td><td dir="ltr"><code>False</code></td></tr>
+                
+                    <tr><td>لاشيء</td><td dir="ltr"><code>None</code></td></tr>
+                
+                    <tr><td>و</td><td dir="ltr"><code>and</code></td></tr>
+                
+                    <tr><td>أو</td><td dir="ltr"><code>or</code></td></tr>
+                
+                    <tr><td>غير</td><td dir="ltr"><code>not</code></td></tr>
+                
+                    <tr><td>صنف</td><td dir="ltr"><code>class</code></td></tr>
+                
+                    <tr><td>يمر</td><td dir="ltr"><code>pass</code></td></tr>
+                
+                    <tr><td>عالمي</td><td dir="ltr"><code>global</code></td></tr>
+                
+                    <tr><td>غير_محلي</td><td dir="ltr"><code>nonlocal</code></td></tr>
+                
+                    <tr><td>رفع</td><td dir="ltr"><code>raise</code></td></tr>
+                
+                    <tr><td>هو</td><td dir="ltr"><code>is</code></td></tr>
+                
+                    <tr><td>أدخل</td><td dir="ltr"><code>input</code></td></tr>
+                
+                    <tr><td>طول</td><td dir="ltr"><code>len</code></td></tr>
+                
+                    <tr><td>نوع</td><td dir="ltr"><code>type</code></td></tr>
+                
+                    <tr><td>نطاق</td><td dir="ltr"><code>range</code></td></tr>
+                
+                    <tr><td>عدد_صحيح</td><td dir="ltr"><code>int</code></td></tr>
+                
+                    <tr><td>عدد_عشري</td><td dir="ltr"><code>float</code></td></tr>
+                
+                    <tr><td>نص</td><td dir="ltr"><code>str</code></td></tr>
+                
+                    <tr><td>قائمة</td><td dir="ltr"><code>list</code></td></tr>
+                
+                    <tr><td>مجموع</td><td dir="ltr"><code>sum</code></td></tr>
+                
+                    <tr><td>أكبر</td><td dir="ltr"><code>max</code></td></tr>
+                
+                    <tr><td>أصغر</td><td dir="ltr"><code>min</code></td></tr>
+                
+                    <tr><td>مطلق</td><td dir="ltr"><code>abs</code></td></tr>
+                
+                    <tr><td>قرّب</td><td dir="ltr"><code>round</code></td></tr>
+                
+                    <tr><td>مرتب</td><td dir="ltr"><code>sorted</code></td></tr>
+                
+                    <tr><td>قاموس</td><td dir="ltr"><code>dict</code></td></tr>
+                
+                    <tr><td>عدّد</td><td dir="ltr"><code>enumerate</code></td></tr>
+                
+                    <tr><td>أضف</td><td dir="ltr"><code>append</code></td></tr>
+                
+                    <tr><td>عناصر</td><td dir="ltr"><code>items</code></td></tr>
+                
+                    <tr><td>مفاتيح</td><td dir="ltr"><code>keys</code></td></tr>
+                
+                    <tr><td>قيم</td><td dir="ltr"><code>values</code></td></tr>
+                
+                    <tr><td>افصل</td><td dir="ltr"><code>split</code></td></tr>
+                
+                    <tr><td>ادمج</td><td dir="ltr"><code>join</code></td></tr>
+                
+                    <tr><td>كبير</td><td dir="ltr"><code>upper</code></td></tr>
+                
+                    <tr><td>يساوي</td><td dir="ltr"><code>==</code></td></tr>
+                
+                    <tr><td>لا_يساوي</td><td dir="ltr"><code>!=</code></td></tr>
+                
+                    <tr><td>أكبر_من</td><td dir="ltr"><code>&gt;</code></td></tr>
+                
+                    <tr><td>أصغر_من</td><td dir="ltr"><code>&lt;</code></td></tr>
+                
+                    <tr><td>أكبر_أو_يساوي</td><td dir="ltr"><code>&gt;=</code></td></tr>
+                
+                    <tr><td>أصغر_أو_يساوي</td><td dir="ltr"><code>&lt;=</code></td></tr>
+                
+                </tbody>
+            </table>
+        </details>
+    </section>
+</main>
+
+<script>window.ARYTHON_KEYWORDS = {"\u0623\u062e\u064a\u0631\u0627": "finally", "\u0623\u062f\u062e\u0644": "input", "\u0623\u0631\u062c\u0639": "return", "\u0623\u0635\u063a\u0631": "min", "\u0623\u0635\u063a\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a": "\u003c=", "\u0623\u0635\u063a\u0631_\u0645\u0646": "\u003c", "\u0623\u0636\u0641": "append", "\u0623\u0643\u0628\u0631": "max", "\u0623\u0643\u0628\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a": "\u003e=", "\u0623\u0643\u0628\u0631_\u0645\u0646": "\u003e", "\u0623\u0648": "or", "\u0625\u0630\u0627": "if", "\u0627\u062f\u0645\u062c": "join", "\u0627\u0633\u062a\u0645\u0631\u0627\u0631": "continue", "\u0627\u0633\u062a\u064a\u0631\u0627\u062f": "import", "\u0627\u0637\u0628\u0639": "print", "\u0627\u0641\u0635\u0644": "split", "\u0627\u0643\u0633\u0631": "break", "\u0628\u064a\u0646\u0645\u0627": "while", "\u062d\u0627\u0648\u0644": "try", "\u062e\u0637\u0623": "False", "\u062f\u0627\u0644\u0629": "def", "\u0631\u0641\u0639": "raise", "\u0635\u062d\u064a\u062d": "True", "\u0635\u0646\u0641": "class", "\u0637\u0648\u0644": "len", "\u0639\u0627\u0644\u0645\u064a": "global", "\u0639\u062f\u0627": "except", "\u0639\u062f\u062f_\u0635\u062d\u064a\u062d": "int", "\u0639\u062f\u062f_\u0639\u0634\u0631\u064a": "float", "\u0639\u062f\u0651\u062f": "enumerate", "\u0639\u0646\u0627\u0635\u0631": "items", "\u063a\u064a\u0631": "not", "\u063a\u064a\u0631_\u0645\u062d\u0644\u064a": "nonlocal", "\u0641\u064a": "in", "\u0641\u064a_\u0636\u0645\u0646": "in", "\u0642\u0627\u0626\u0645\u0629": "list", "\u0642\u0627\u0645\u0648\u0633": "dict", "\u0642\u0631\u0651\u0628": "round", "\u0642\u064a\u0645": "values", "\u0643\u0628\u064a\u0631": "upper", "\u0643\u0640": "as", "\u0644\u0627_\u064a\u0633\u0627\u0648\u064a": "!=", "\u0644\u0627\u0634\u064a\u0621": "None", "\u0644\u0643\u0644": "for", "\u0645\u062c\u0645\u0648\u0639": "sum", "\u0645\u0631\u062a\u0628": "sorted", "\u0645\u0637\u0644\u0642": "abs", "\u0645\u0639": "with", "\u0645\u0641\u0627\u062a\u064a\u062d": "keys", "\u0645\u0646": "from", "\u0646\u0635": "str", "\u0646\u0637\u0627\u0642": "range", "\u0646\u0648\u0639": "type", "\u0647\u0648": "is", "\u0648": "and", "\u0648\u0625\u0644\u0627": "else", "\u0648\u0625\u0644\u0627_\u0625\u0630\u0627": "elif", "\u064a\u0633\u0627\u0648\u064a": "==", "\u064a\u0645\u0631": "pass"}; window.ARYTHON_MODE = "browser";</script>
+<script type="module">
+import { createEditor, toArabicDigits } from './static/editor.js';
+import { ScriptRunner } from './static/browser-python.js';
+
+// GitHub Pages build: Python runs in the browser instead of on the server
+const runner = window.ARYTHON_MODE === 'browser' ? new ScriptRunner() : null;
+
+const EXAMPLES = Object.fromEntries(
+    [["\u0623\u0633\u0627\u0633\u064a\u0627\u062a", [["hello", "\u0645\u0631\u062d\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645", "# \u0623\u0648\u0644 \u0628\u0631\u0646\u0627\u0645\u062c\n\u0627\u0637\u0628\u0639(\"\u0645\u0631\u062d\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645!\")\n", ""], ["vars", "\u0627\u0644\u0645\u062a\u063a\u064a\u0631\u0627\u062a \u0648\u0627\u0644\u062d\u0633\u0627\u0628", "\u0623 = \u0661\u0665\n\u0628 = \u0664\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0645\u062c\u0645\u0648\u0639:\", \u0623 + \u0628)\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0641\u0631\u0642:\", \u0623 - \u0628)\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0636\u0631\u0628:\", \u0623 * \u0628)\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0642\u0633\u0645\u0629:\", \u0623 / \u0628)\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0642\u0633\u0645\u0629 \u0627\u0644\u0635\u062d\u064a\u062d\u0629:\", \u0623 // \u0628)\n\u0627\u0637\u0628\u0639(\"\u0628\u0627\u0642\u064a \u0627\u0644\u0642\u0633\u0645\u0629:\", \u0623 % \u0628)\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0623\u0633:\", \u0628 ** \u0662)\n", ""], ["input", "\u0625\u062f\u062e\u0627\u0644 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645", "\u0627\u0644\u0627\u0633\u0645 = \u0623\u062f\u062e\u0644()\n\u0627\u0644\u0639\u0645\u0631 = \u0639\u062f\u062f_\u0635\u062d\u064a\u062d(\u0623\u062f\u062e\u0644())\n\u0627\u0637\u0628\u0639(\"\u0623\u0647\u0644\u0627\", \u0627\u0644\u0627\u0633\u0645)\n\u0627\u0637\u0628\u0639(\"\u0628\u0639\u062f \u0639\u0634\u0631 \u0633\u0646\u0648\u0627\u062a \u0633\u064a\u0643\u0648\u0646 \u0639\u0645\u0631\u0643\", \u0627\u0644\u0639\u0645\u0631 + \u0661\u0660)\n", "\u0633\u0627\u0631\u0629\n20"], ["fstring", "\u0627\u0644\u0646\u0635\u0648\u0635 \u0627\u0644\u0645\u0646\u0633\u0642\u0629", "\u0627\u0644\u0627\u0633\u0645 = \"\u0623\u062d\u0645\u062f\"\n\u0627\u0644\u062f\u0631\u062c\u0627\u062a = [\u0669\u0660\u060c \u0668\u0665\u060c \u0667\u0667]\n\u0627\u0637\u0628\u0639(f\"\u0627\u0644\u0637\u0627\u0644\u0628 {\u0627\u0644\u0627\u0633\u0645} \u0644\u062f\u064a\u0647 {\u0637\u0648\u0644(\u0627\u0644\u062f\u0631\u062c\u0627\u062a)} \u062f\u0631\u062c\u0627\u062a\")\n\u0627\u0637\u0628\u0639(f\"\u0627\u0644\u0645\u0639\u062f\u0644: {\u0642\u0631\u0651\u0628(\u0645\u062c\u0645\u0648\u0639(\u0627\u0644\u062f\u0631\u062c\u0627\u062a) / \u0637\u0648\u0644(\u0627\u0644\u062f\u0631\u062c\u0627\u062a)\u060c \u0662)}\")\n", ""]]], ["\u0627\u0644\u0634\u0631\u0648\u0637 \u0648\u0627\u0644\u062d\u0644\u0642\u0627\u062a", [["grade", "\u062a\u0642\u062f\u064a\u0631 \u0627\u0644\u062f\u0631\u062c\u0629", "\u0627\u0644\u062f\u0631\u062c\u0629 = \u0639\u062f\u062f_\u0635\u062d\u064a\u062d(\u0623\u062f\u062e\u0644())\n\n\u0625\u0630\u0627 \u0627\u0644\u062f\u0631\u062c\u0629 \u0623\u0643\u0628\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a \u0669\u0660:\n    \u0627\u0637\u0628\u0639(\"\u0645\u0645\u062a\u0627\u0632\")\n\u0648\u0625\u0644\u0627_\u0625\u0630\u0627 \u0627\u0644\u062f\u0631\u062c\u0629 \u0623\u0643\u0628\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a \u0668\u0660:\n    \u0627\u0637\u0628\u0639(\"\u062c\u064a\u062f \u062c\u062f\u0627\")\n\u0648\u0625\u0644\u0627_\u0625\u0630\u0627 \u0627\u0644\u062f\u0631\u062c\u0629 \u0623\u0643\u0628\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a \u0666\u0665:\n    \u0627\u0637\u0628\u0639(\"\u062c\u064a\u062f\")\n\u0648\u0625\u0644\u0627:\n    \u0627\u0637\u0628\u0639(\"\u0631\u0627\u0633\u0628\")\n", "84"], ["loop", "\u0632\u0648\u062c\u064a \u0623\u0645 \u0641\u0631\u062f\u064a", "\u0644\u0643\u0644 \u0639 \u0641\u064a \u0646\u0637\u0627\u0642(\u0661\u060c \u0661\u0661):\n    \u0625\u0630\u0627 \u0639 % \u0662 \u064a\u0633\u0627\u0648\u064a \u0660:\n        \u0627\u0637\u0628\u0639(\u0639\u060c \"\u0632\u0648\u062c\u064a\")\n    \u0648\u0625\u0644\u0627:\n        \u0627\u0637\u0628\u0639(\u0639\u060c \"\u0641\u0631\u062f\u064a\")\n", ""], ["while", "\u0627\u0644\u0639\u062f \u0627\u0644\u062a\u0646\u0627\u0632\u0644\u064a", "\u0627\u0644\u0639\u062f\u0627\u062f = \u0665\n\u0628\u064a\u0646\u0645\u0627 \u0627\u0644\u0639\u062f\u0627\u062f \u0623\u0643\u0628\u0631_\u0645\u0646 \u0660:\n    \u0627\u0637\u0628\u0639(\"...\", \u0627\u0644\u0639\u062f\u0627\u062f)\n    \u0627\u0644\u0639\u062f\u0627\u062f = \u0627\u0644\u0639\u062f\u0627\u062f - \u0661\n\u0627\u0637\u0628\u0639(\"\u0627\u0646\u0637\u0644\u0627\u0642! \ud83d\ude80\")\n", ""], ["table", "\u062c\u062f\u0648\u0644 \u0627\u0644\u0636\u0631\u0628", "\u0646 = \u0639\u062f\u062f_\u0635\u062d\u064a\u062d(\u0623\u062f\u062e\u0644())\n\u0644\u0643\u0644 \u0639 \u0641\u064a \u0646\u0637\u0627\u0642(\u0661\u060c \u0661\u0661):\n    \u0627\u0637\u0628\u0639(f\"{\u0646} \u00d7 {\u0639} = {\u0646 * \u0639}\")\n", "7"], ["primes", "\u0627\u0644\u0623\u0639\u062f\u0627\u062f \u0627\u0644\u0623\u0648\u0644\u064a\u0629", "\u0627\u0644\u0623\u0648\u0644\u064a\u0629 = []\n\u0644\u0643\u0644 \u0639 \u0641\u064a \u0646\u0637\u0627\u0642(\u0662\u060c \u0665\u0660):\n    \u0623\u0648\u0644\u064a = \u0635\u062d\u064a\u062d\n    \u0644\u0643\u0644 \u0642 \u0641\u064a \u0646\u0637\u0627\u0642(\u0662\u060c \u0639):\n        \u0625\u0630\u0627 \u0639 % \u0642 \u064a\u0633\u0627\u0648\u064a \u0660:\n            \u0623\u0648\u0644\u064a = \u062e\u0637\u0623\n            \u0627\u0643\u0633\u0631\n    \u0625\u0630\u0627 \u0623\u0648\u0644\u064a:\n        \u0627\u0644\u0623\u0648\u0644\u064a\u0629.\u0623\u0636\u0641(\u0639)\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0623\u0639\u062f\u0627\u062f \u0627\u0644\u0623\u0648\u0644\u064a\u0629 \u0623\u0642\u0644 \u0645\u0646 \u0665\u0660:\")\n\u0627\u0637\u0628\u0639(\u0627\u0644\u0623\u0648\u0644\u064a\u0629)\n", ""], ["stars", "\u0647\u0631\u0645 \u0627\u0644\u0646\u062c\u0648\u0645", "\u0627\u0644\u0627\u0631\u062a\u0641\u0627\u0639 = \u0665\n\u0644\u0643\u0644 \u0639 \u0641\u064a \u0646\u0637\u0627\u0642(\u0661\u060c \u0627\u0644\u0627\u0631\u062a\u0641\u0627\u0639 + \u0661):\n    \u0627\u0637\u0628\u0639(\" \" * (\u0627\u0644\u0627\u0631\u062a\u0641\u0627\u0639 - \u0639) + \"*\" * (\u0662 * \u0639 - \u0661))\n", ""]]], ["\u0627\u0644\u062f\u0648\u0627\u0644", [["func", "\u062f\u0627\u0644\u0629 \u0639\u0648\u062f\u064a\u0629 (\u0627\u0644\u0645\u0636\u0631\u0648\u0628)", "\u062f\u0627\u0644\u0629 \u0645\u0636\u0631\u0648\u0628(\u0646):\n    \u0625\u0630\u0627 \u0646 \u0623\u0635\u063a\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a \u0661:\n        \u0623\u0631\u062c\u0639 \u0661\n    \u0623\u0631\u062c\u0639 \u0646 * \u0645\u0636\u0631\u0648\u0628(\u0646 - \u0661)\n\n\u0627\u0637\u0628\u0639(\"\u0645\u0636\u0631\u0648\u0628 \u0665 =\", \u0645\u0636\u0631\u0648\u0628(\u0665))\n", ""], ["fib", "\u0645\u062a\u062a\u0627\u0644\u064a\u0629 \u0641\u064a\u0628\u0648\u0646\u0627\u062a\u0634\u064a", "\u062f\u0627\u0644\u0629 \u0641\u064a\u0628\u0648\u0646\u0627\u062a\u0634\u064a(\u0646):\n    \u0623\u060c \u0628 = \u0660\u060c \u0661\n    \u0627\u0644\u0646\u062a\u064a\u062c\u0629 = []\n    \u0644\u0643\u0644 _ \u0641\u064a \u0646\u0637\u0627\u0642(\u0646):\n        \u0627\u0644\u0646\u062a\u064a\u062c\u0629.\u0623\u0636\u0641(\u0623)\n        \u0623\u060c \u0628 = \u0628\u060c \u0623 + \u0628\n    \u0623\u0631\u062c\u0639 \u0627\u0644\u0646\u062a\u064a\u062c\u0629\n\n\u0627\u0637\u0628\u0639(\u0641\u064a\u0628\u0648\u0646\u0627\u062a\u0634\u064a(\u0661\u0665))\n", ""], ["calc", "\u0622\u0644\u0629 \u062d\u0627\u0633\u0628\u0629", "\u062f\u0627\u0644\u0629 \u0627\u062d\u0633\u0628(\u0623\u060c \u0627\u0644\u0639\u0645\u0644\u064a\u0629\u060c \u0628):\n    \u0625\u0630\u0627 \u0627\u0644\u0639\u0645\u0644\u064a\u0629 \u064a\u0633\u0627\u0648\u064a \"+\":\n        \u0623\u0631\u062c\u0639 \u0623 + \u0628\n    \u0648\u0625\u0644\u0627_\u0625\u0630\u0627 \u0627\u0644\u0639\u0645\u0644\u064a\u0629 \u064a\u0633\u0627\u0648\u064a \"-\":\n        \u0623\u0631\u062c\u0639 \u0623 - \u0628\n    \u0648\u0625\u0644\u0627_\u0625\u0630\u0627 \u0627\u0644\u0639\u0645\u0644\u064a\u0629 \u064a\u0633\u0627\u0648\u064a \"*\":\n        \u0623\u0631\u062c\u0639 \u0623 * \u0628\n    \u0648\u0625\u0644\u0627_\u0625\u0630\u0627 \u0627\u0644\u0639\u0645\u0644\u064a\u0629 \u064a\u0633\u0627\u0648\u064a \"/\":\n        \u0623\u0631\u062c\u0639 \u0623 / \u0628\n    \u0631\u0641\u0639 ValueError(\"\u0639\u0645\u0644\u064a\u0629 \u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641\u0629\")\n\n\u0627\u0637\u0628\u0639(\u0627\u062d\u0633\u0628(\u0661\u0662\u060c \"+\"\u060c \u0668))\n\u0627\u0637\u0628\u0639(\u0627\u062d\u0633\u0628(\u0661\u0662\u060c \"*\"\u060c \u0668))\n\u0627\u0637\u0628\u0639(\u0627\u062d\u0633\u0628(\u0661\u0662\u060c \"/\"\u060c \u0668))\n", ""]]], ["\u0647\u064a\u0627\u0643\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a", [["lists", "\u0627\u0644\u0642\u0648\u0627\u0626\u0645", "\u0627\u0644\u0623\u0631\u0642\u0627\u0645 = [\u0664\u0662\u060c \u0667\u060c \u0661\u0669\u060c \u0663\u060c \u0662\u0668]\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0642\u0627\u0626\u0645\u0629:\", \u0627\u0644\u0623\u0631\u0642\u0627\u0645)\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0639\u062f\u062f:\", \u0637\u0648\u0644(\u0627\u0644\u0623\u0631\u0642\u0627\u0645))\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0645\u062c\u0645\u0648\u0639:\", \u0645\u062c\u0645\u0648\u0639(\u0627\u0644\u0623\u0631\u0642\u0627\u0645))\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0623\u0643\u0628\u0631:\", \u0623\u0643\u0628\u0631(\u0627\u0644\u0623\u0631\u0642\u0627\u0645))\n\u0627\u0637\u0628\u0639(\"\u0627\u0644\u0623\u0635\u063a\u0631:\", \u0623\u0635\u063a\u0631(\u0627\u0644\u0623\u0631\u0642\u0627\u0645))\n\u0627\u0637\u0628\u0639(\"\u0645\u0631\u062a\u0628\u0629:\", \u0645\u0631\u062a\u0628(\u0627\u0644\u0623\u0631\u0642\u0627\u0645))\n\n\u0644\u0643\u0644 \u0631\u0642\u0645\u060c \u0642\u064a\u0645\u0629 \u0641\u064a \u0639\u062f\u0651\u062f(\u0627\u0644\u0623\u0631\u0642\u0627\u0645):\n    \u0627\u0637\u0628\u0639(f\"\u0627\u0644\u0639\u0646\u0635\u0631 {\u0631\u0642\u0645}: {\u0642\u064a\u0645\u0629}\")\n", ""], ["dict", "\u062f\u0644\u064a\u0644 \u0627\u0644\u0647\u0627\u062a\u0641 (\u0642\u0627\u0645\u0648\u0633)", "\u0627\u0644\u062f\u0644\u064a\u0644 = {\n    \"\u0623\u062d\u0645\u062f\": \"0501234567\"\u060c\n    \"\u0641\u0627\u0637\u0645\u0629\": \"0559876543\"\u060c\n}\n\u0627\u0644\u062f\u0644\u064a\u0644[\"\u062e\u0627\u0644\u062f\"] = \"0544455566\"\n\n\u0644\u0643\u0644 \u0627\u0644\u0627\u0633\u0645\u060c \u0627\u0644\u0631\u0642\u0645 \u0641\u064a \u0627\u0644\u062f\u0644\u064a\u0644.\u0639\u0646\u0627\u0635\u0631():\n    \u0627\u0637\u0628\u0639(f\"{\u0627\u0644\u0627\u0633\u0645}: {\u0627\u0644\u0631\u0642\u0645}\")\n\n\u0627\u0644\u0628\u062d\u062b = \u0623\u062f\u062e\u0644()\n\u0625\u0630\u0627 \u0627\u0644\u0628\u062d\u062b \u0641\u064a \u0627\u0644\u062f\u0644\u064a\u0644:\n    \u0627\u0637\u0628\u0639(\"\u0648\u062c\u062f\u062a:\", \u0627\u0644\u062f\u0644\u064a\u0644[\u0627\u0644\u0628\u062d\u062b])\n\u0648\u0625\u0644\u0627:\n    \u0627\u0637\u0628\u0639(\"\u0627\u0644\u0627\u0633\u0645 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f\")\n", "\u0641\u0627\u0637\u0645\u0629"], ["words", "\u062a\u062d\u0644\u064a\u0644 \u062c\u0645\u0644\u0629", "\u0627\u0644\u062c\u0645\u0644\u0629 = \"\u0627\u0644\u0628\u0631\u0645\u062c\u0629 \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0645\u0645\u062a\u0639\u0629 \u0648\u0633\u0647\u0644\u0629\"\n\u0627\u0644\u0643\u0644\u0645\u0627\u062a = \u0627\u0644\u062c\u0645\u0644\u0629.\u0627\u0641\u0635\u0644()\n\u0627\u0637\u0628\u0639(\"\u0639\u062f\u062f \u0627\u0644\u0643\u0644\u0645\u0627\u062a:\", \u0637\u0648\u0644(\u0627\u0644\u0643\u0644\u0645\u0627\u062a))\n\u0644\u0643\u0644 \u0643\u0644\u0645\u0629 \u0641\u064a \u0627\u0644\u0643\u0644\u0645\u0627\u062a:\n    \u0627\u0637\u0628\u0639(\u0643\u0644\u0645\u0629\u060c \"\u2190\", \u0637\u0648\u0644(\u0643\u0644\u0645\u0629)\u060c \"\u062d\u0631\u0648\u0641\")\n\u0627\u0637\u0628\u0639(\" - \".\u0627\u062f\u0645\u062c(\u0645\u0631\u062a\u0628(\u0627\u0644\u0643\u0644\u0645\u0627\u062a)))\n", ""]]], ["\u0645\u062a\u0642\u062f\u0645", [["errors", "\u0645\u0639\u0627\u0644\u062c\u0629 \u0627\u0644\u0623\u062e\u0637\u0627\u0621", "\u062d\u0627\u0648\u0644:\n    \u0627\u0644\u0631\u0642\u0645 = \u0639\u062f\u062f_\u0635\u062d\u064a\u062d(\u0623\u062f\u062e\u0644())\n    \u0627\u0637\u0628\u0639(\"\u0627\u0644\u0646\u062a\u064a\u062c\u0629:\", \u0661\u0660\u0660 / \u0627\u0644\u0631\u0642\u0645)\n\u0639\u062f\u0627 ZeroDivisionError:\n    \u0627\u0637\u0628\u0639(\"\u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u0642\u0633\u0645\u0629 \u0639\u0644\u0649 \u0635\u0641\u0631!\")\n\u0639\u062f\u0627 ValueError:\n    \u0627\u0637\u0628\u0639(\"\u0627\u0644\u0631\u062c\u0627\u0621 \u0625\u062f\u062e\u0627\u0644 \u0631\u0642\u0645 \u0635\u062d\u064a\u062d\")\n\u0623\u062e\u064a\u0631\u0627:\n    \u0627\u0637\u0628\u0639(\"\u0627\u0646\u062a\u0647\u0649 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062c\")\n", "0"], ["class", "\u0627\u0644\u0623\u0635\u0646\u0627\u0641 (\u0637\u0627\u0644\u0628)", "\u0635\u0646\u0641 \u0637\u0627\u0644\u0628:\n    \u062f\u0627\u0644\u0629 __init__(self\u060c \u0627\u0644\u0627\u0633\u0645\u060c \u0627\u0644\u062f\u0631\u062c\u0627\u062a):\n        self.\u0627\u0644\u0627\u0633\u0645 = \u0627\u0644\u0627\u0633\u0645\n        self.\u0627\u0644\u062f\u0631\u062c\u0627\u062a = \u0627\u0644\u062f\u0631\u062c\u0627\u062a\n\n    \u062f\u0627\u0644\u0629 \u0627\u0644\u0645\u0639\u062f\u0644(self):\n        \u0623\u0631\u062c\u0639 \u0645\u062c\u0645\u0648\u0639(self.\u0627\u0644\u062f\u0631\u062c\u0627\u062a) / \u0637\u0648\u0644(self.\u0627\u0644\u062f\u0631\u062c\u0627\u062a)\n\n    \u062f\u0627\u0644\u0629 \u0639\u0631\u0636(self):\n        \u0627\u0637\u0628\u0639(f\"{self.\u0627\u0644\u0627\u0633\u0645}: \u0627\u0644\u0645\u0639\u062f\u0644 {\u0642\u0631\u0651\u0628(self.\u0627\u0644\u0645\u0639\u062f\u0644()\u060c \u0661)}\")\n\n\u0627\u0644\u0637\u0644\u0627\u0628 = [\n    \u0637\u0627\u0644\u0628(\"\u0644\u064a\u0644\u0649\"\u060c [\u0669\u0665\u060c \u0668\u0668\u060c \u0669\u0662])\u060c\n    \u0637\u0627\u0644\u0628(\"\u0639\u0645\u0631\"\u060c [\u0667\u0660\u060c \u0668\u0661\u060c \u0667\u0665])\u060c\n]\n\u0644\u0643\u0644 \u0637 \u0641\u064a \u0627\u0644\u0637\u0644\u0627\u0628:\n    \u0637.\u0639\u0631\u0636()\n", ""], ["guess", "\u0644\u0639\u0628\u0629 \u0627\u0644\u062a\u062e\u0645\u064a\u0646", "\u0627\u0644\u0633\u0631\u064a = \u0664\u0662\n\u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0627\u062a = \u0660\n\u0628\u064a\u0646\u0645\u0627 \u0635\u062d\u064a\u062d:\n    \u0627\u0644\u062a\u062e\u0645\u064a\u0646 = \u0639\u062f\u062f_\u0635\u062d\u064a\u062d(\u0623\u062f\u062e\u0644())\n    \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0627\u062a = \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0627\u062a + \u0661\n    \u0625\u0630\u0627 \u0627\u0644\u062a\u062e\u0645\u064a\u0646 \u0623\u0635\u063a\u0631_\u0645\u0646 \u0627\u0644\u0633\u0631\u064a:\n        \u0627\u0637\u0628\u0639(\u0627\u0644\u062a\u062e\u0645\u064a\u0646\u060c \"\u2190 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0630\u0644\u0643\")\n    \u0648\u0625\u0644\u0627_\u0625\u0630\u0627 \u0627\u0644\u062a\u062e\u0645\u064a\u0646 \u0623\u0643\u0628\u0631_\u0645\u0646 \u0627\u0644\u0633\u0631\u064a:\n        \u0627\u0637\u0628\u0639(\u0627\u0644\u062a\u062e\u0645\u064a\u0646\u060c \"\u2190 \u0623\u0635\u063a\u0631 \u0645\u0646 \u0630\u0644\u0643\")\n    \u0648\u0625\u0644\u0627:\n        \u0627\u0637\u0628\u0639(f\"\u0623\u062d\u0633\u0646\u062a! \u0648\u062c\u062f\u062a \u0627\u0644\u0631\u0642\u0645 \u0641\u064a {\u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0627\u062a} \u0645\u062d\u0627\u0648\u0644\u0627\u062a\")\n        \u0627\u0643\u0633\u0631\n", "50\n25\n40\n42"]]]].flatMap(([, items]) => items.map(([key, , src, input]) => [key, { src, input }]))
+);
+
+const cursorPos = document.getElementById('cursor-pos');
+const stdin = document.getElementById('stdin');
+const output = document.getElementById('output');
+const translated = document.getElementById('translated');
+const runBtn = document.getElementById('run');
+
+const editor = createEditor(document.getElementById('editor'), {
+    onRun: mode => { if (mode === 'stay') run(); },
+    onCursor: (line, col) => {
+        cursorPos.textContent = `سطر ${toArabicDigits(line)}، عمود ${toArabicDigits(col)}`;
+    },
+});
+
+document.getElementById('examples').addEventListener('change', e => {
+    if (!e.target.value) return;
+    const ex = EXAMPLES[e.target.value];
+    editor.value = ex.src.trimEnd();
+    stdin.value = ex.input;
+    e.target.value = '';
+    editor.focus();
+    editor.textarea.setSelectionRange(0, 0);
+});
+runBtn.addEventListener('click', run);
+
+async function run() {
+    runBtn.disabled = true;
+    output.className = 'output';
+    output.textContent = runner && !runner.ready ? 'جارٍ تحميل بايثون في المتصفح… (المرة الأولى أبطأ)' : 'جارٍ التشغيل…';
+    let errorLine = null;
+    try {
+        const data = runner ? await runner.run(editor.value, stdin.value) : await (await fetch('/api/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: editor.value, stdin: stdin.value }),
+        })).json();
+        output.textContent = data.output || '(لا يوجد ناتج)';
+        output.classList.toggle('error', data.error);
+        translated.textContent = data.translated;
+        const m = data.error && data.output.match(/line (\d+)/);
+        errorLine = m ? Number(m[1]) : null;
+    } catch (err) {
+        output.textContent = 'تعذّر الاتصال بالخادم: ' + err;
+        output.classList.add('error');
+    } finally {
+        runBtn.disabled = false;
+        editor.setErrorLine(errorLine);
+    }
+}
+</script>
+</body>
+</html>
