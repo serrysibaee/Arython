@@ -81,20 +81,23 @@ Then open <http://127.0.0.1:8000> for the editor, or <http://127.0.0.1:8000/note
 
 ### Browser-only version (GitHub Pages)
 
-The [online version](https://serrysibaee.github.io/Arython/) needs no server: Python runs in the visitor's browser with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), inside a Web Worker. It uses the same templates, editor, translator and `kernel.py`.
+The [online version](https://serrysibaee.github.io/Arython/) needs no server and no Python: code runs in the visitor's browser with Arython's own [interpreter](#standalone-interpreter-rust), compiled to WebAssembly (about 520 KB) and run in a Web Worker. It uses the same templates and editor as the server version. The "show Python" view and the `.ipynb` export come from `static/translate.js`, a JavaScript port of the translator.
 
-- To build and preview it locally:
+Because the online version runs on the Rust interpreter, it supports what [that interpreter supports](#standalone-interpreter-rust), not all of Python. Every built-in example works.
+
+- To build and preview it locally (needs [Rust](https://rustup.rs) for the WebAssembly build):
 
   ```bash
   pip install jinja2
-  python web/build.py                       # writes _site/
+  rustup target add wasm32-unknown-unknown
+  python web/build.py                       # compiles compiler/ to WebAssembly, writes _site/
   python -m http.server -d _site 8000       # open http://localhost:8000
   ```
 
 - To publish, push the contents of `_site/` to the `gh-pages` branch, which Pages serves (**Settings → Pages → Deploy from a branch → `gh-pages`**).
 
 - Live `أدخل` input and the **Stop** button need shared memory, which browsers only allow on cross-origin-isolated pages. GitHub Pages can't set those headers, so `coi-serviceworker.js` adds them; the first visit reloads the page once.
-- The first run downloads Pyodide (about 10 MB), then the browser caches it.
+- Very deep recursion can run out of the browser's own stack before reaching the limit of 1000 calls (recursion through a list comprehension stops at about 800 levels). The program then stops with a `RecursionError`, and in the notebook the kernel restarts.
 
 ## Standalone interpreter (Rust)
 
@@ -184,11 +187,13 @@ The full list is in `ARABIC_TO_PYTHON` in [`arabic_translator.py`](arabic_transl
 │   ├── src/builtins.rs      # Built-in functions, methods, modules, formatting
 │   ├── src/value.rs         # Runtime values
 │   ├── src/alloc.rs         # Fast small-object allocator
+│   ├── src/lib.rs           # Runs a piece of code; shared by the command line and the browser
+│   ├── src/host.rs          # Output, input, clock and interrupts (terminal or browser)
+│   ├── src/wasm.rs          # WebAssembly entry points for the Pages build
 │   ├── src/main.rs          # Command line, REPL, Arabic error messages
 │   └── tests/compare.py     # Checks the output matches CPython
 ├── web/                     # Browser-only build for GitHub Pages
-│   ├── build.py             # Renders the templates into a static site in _site/
-│   ├── browser_runtime.py   # Runs editor programs and notebook cells inside Pyodide
+│   ├── build.py             # Compiles the interpreter to WebAssembly, renders the static site in _site/
 │   └── coi-serviceworker.js # Enables cross-origin isolation (third-party, MIT)
 ├── templates/
 │   ├── index.html           # Single-file editor page
@@ -196,8 +201,9 @@ The full list is in `ARABIC_TO_PYTHON` in [`arabic_translator.py`](arabic_transl
 └── static/
     ├── editor.js            # Shared RTL code editor + syntax highlighter
     ├── notebook.js          # Notebook cells, outputs, save/load, kernel connection
-    ├── browser-python.js    # Pages build: in-browser kernel and editor runner
-    ├── pyworker.js          # Pages build: Web Worker that loads Pyodide
+    ├── browser-runtime.js   # Pages build: in-browser kernel and editor runner
+    ├── arython-worker.js    # Pages build: Web Worker that runs arython.wasm
+    ├── translate.js         # Pages build: Arabic → Python for the "show Python" view and export
     └── style.css            # Styles and light/dark themes
 ```
 

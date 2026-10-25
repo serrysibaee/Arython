@@ -1,7 +1,7 @@
 // Arython notebook: code and text cells sharing one kernel over a WebSocket
-// (or, in the GitHub Pages build, a Pyodide kernel in the browser).
+// (or, in the GitHub Pages build, an in-browser kernel running the Arython interpreter).
 import { createEditor, escapeHtml, toArabicDigits } from './editor.js';
-import { BrowserKernel } from './browser-python.js';
+import { BrowserKernel } from './browser-runtime.js';
 
 const STORAGE_KEY = 'arython.notebook';
 const MAX_OUTPUT_CHARS = 200_000;
@@ -383,7 +383,7 @@ function handleMessage(msg) {
 // ---------- Kernel connection ----------
 const KERNEL_LABELS = {
     connecting: 'جارٍ الاتصال…',
-    loading: 'جارٍ تحميل بايثون…',
+    loading: 'جارٍ تحميل أرايثون…',
     idle: 'النواة جاهزة',
     busy: 'النواة مشغولة',
     restarting: 'إعادة تشغيل النواة…',

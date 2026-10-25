@@ -2,13 +2,20 @@
 
 use crate::ast::*;
 use crate::builtins;
+use crate::host;
 use crate::resolve::Globals;
 use crate::value::*;
 use std::cell::RefCell;
-use std::io::{IsTerminal, Write as _};
 use std::rc::Rc;
 
 pub const MAX_DEPTH: usize = 1000;
+/// Buffered output is written once it grows past this
+const FLUSH_BYTES: usize = if cfg!(target_arch = "wasm32") { 8192 } else { 1 << 16 };
+/// In the browser, statements between checks for an interrupt (and for output to send)
+#[cfg(target_arch = "wasm32")]
+const POLL_EVERY: u32 = 1024;
+#[cfg(target_arch = "wasm32")]
+const FLUSH_SECONDS: f64 = 0.05;
 
 pub struct Exc {
     pub value: Value,
@@ -94,6 +101,10 @@ pub struct Interp {
     vec_pool: Vec<Vec<Value>>,
     init_name: Str,
     pub rng: u64,
+    #[cfg(target_arch = "wasm32")]
+    ticks: u32,
+    #[cfg(target_arch = "wasm32")]
+    last_flush: f64,
 }
 
 impl Interp {
@@ -112,7 +123,7 @@ impl Interp {
             builtins.insert(name, Value::Class(cls.clone()));
             exceptions.insert(name, cls);
         }
-        let seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_nanos() as u64);
+        let seed = (host::now_secs() * 1e9) as u64;
         Interp {
             globals: Vec::new(),
             names: Globals::default(),
@@ -120,13 +131,17 @@ impl Interp {
             base_exception: exceptions["BaseException"].clone(),
             exceptions,
             out: String::new(),
-            out_is_terminal: std::io::stdout().is_terminal(),
+            out_is_terminal: host::stdout_is_terminal(),
             depth: 0,
             handling: Vec::new(),
             modules: Map::default(),
             vec_pool: Vec::new(),
             init_name: crate::lexer::intern("__init__"),
             rng: seed | 1,
+            #[cfg(target_arch = "wasm32")]
+            ticks: 0,
+            #[cfg(target_arch = "wasm32")]
+            last_flush: 0.0,
         }
     }
 
@@ -143,18 +158,38 @@ impl Interp {
 
     pub fn write(&mut self, s: &str) {
         self.out.push_str(s);
-        if self.out_is_terminal || self.out.len() > 1 << 16 {
+        if self.out_is_terminal || self.out.len() > FLUSH_BYTES {
             self.flush();
         }
     }
 
     pub fn flush(&mut self) {
         if !self.out.is_empty() {
-            let mut stdout = std::io::stdout().lock();
-            let _ = stdout.write_all(self.out.as_bytes());
-            let _ = stdout.flush();
+            host::write_out(&self.out);
             self.out.clear();
         }
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.last_flush = host::now_secs();
+        }
+    }
+
+    /// Browser only: every so often, stop if the page asked to and send pending output
+    #[inline(always)]
+    fn poll(&mut self) -> R<()> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.ticks = self.ticks.wrapping_add(1);
+            if self.ticks % POLL_EVERY == 0 {
+                if host::interrupted() {
+                    return Err(self.err("KeyboardInterrupt", ""));
+                }
+                if !self.out.is_empty() && host::now_secs() - self.last_flush > FLUSH_SECONDS {
+                    self.flush();
+                }
+            }
+        }
+        Ok(())
     }
 
     // ---------- Errors ----------
@@ -198,6 +233,7 @@ impl Interp {
     }
 
     fn exec(&mut self, f: &mut Frame, s: &Stmt) -> R<Flow> {
+        self.poll()?;
         match &s.kind {
             StmtKind::Expr(e) => {
                 self.eval(f, e)?;
@@ -1721,17 +1757,12 @@ impl Interp {
     // ---------- Input ----------
 
     pub fn read_line(&mut self, prompt: &str) -> R<String> {
-        self.out.push_str(prompt);
         self.flush();
-        let mut line = String::new();
-        match std::io::stdin().read_line(&mut line) {
-            Ok(0) | Err(_) => Err(self.err("EOFError", "لا يوجد إدخال (انتهت المدخلات)")),
-            Ok(_) => {
-                while line.ends_with('\n') || line.ends_with('\r') {
-                    line.pop();
-                }
-                Ok(line)
-            }
+        match host::read_line(prompt) {
+            host::Input::Line(line) => Ok(line),
+            host::Input::Eof => Err(self.err("EOFError", "لا يوجد إدخال (انتهت المدخلات)")),
+            host::Input::Interrupt => Err(self.err("KeyboardInterrupt", "")),
+            host::Input::Unsupported => Err(self.err("RuntimeError", "الإدخال التفاعلي غير مدعوم في هذا المتصفح")),
         }
     }
 }

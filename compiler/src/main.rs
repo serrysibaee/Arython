@@ -3,23 +3,10 @@
 //   arython -c "كود"       run code from the command line
 //   arython                interactive prompt
 
-mod alloc;
-mod ast;
-mod builtins;
-mod interp;
-mod lexer;
-mod parser;
-mod resolve;
-mod value;
-
-use interp::{Exc, Interp};
+use arython::interp::Interp;
+use arython::{Failure, VERSION};
 use std::io::{IsTerminal, Write};
-use value::Value;
 
-#[global_allocator]
-static ALLOC: alloc::Allocator = alloc::Allocator::new();
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Deep recursion runs on this much stack before RecursionError stops it
 const STACK_BYTES: usize = 512 << 20;
 
@@ -60,71 +47,20 @@ fn error_text(kind: &str, msg: &str, line: u32) -> String {
     s
 }
 
-fn report(it: &mut Interp, e: &Exc) {
-    it.flush();
-    let kind = match &e.value {
-        Value::Instance(i) => i.class.name.to_string(),
-        _ => "Error".into(),
-    };
-    let msg = it.to_str(&e.value).unwrap_or_default();
-    eprintln!("{}", error_text(&kind, &msg, e.line));
-}
-
-fn report_syntax(e: &lexer::SyntaxError) {
-    eprintln!("{}", error_text(e.kind, &e.msg, e.line));
-}
-
-/// Parses, resolves and runs one piece of code; returns false on error
+/// Runs one piece of code and prints any error; returns false on error
 fn run_source(it: &mut Interp, src: &str, echo_last: bool) -> bool {
-    let src = src.replace("\r\n", "\n");
-    let mut body = match parser::parse_program(&src) {
-        Ok(b) => b,
-        Err(e) => {
-            report_syntax(&e);
-            return false;
+    match arython::run_source(it, src, echo_last) {
+        Ok(last) => {
+            if let Some(r) = last {
+                println!("{r}");
+            }
+            true
         }
-    };
-    if let Err(e) = resolve::resolve_module(&mut body, &mut it.names) {
-        report_syntax(&e);
-        return false;
-    }
-    it.sync_globals();
-
-    // REPL: show the value of a trailing expression, like Python
-    let last = if echo_last {
-        match body.last().map(|s| &s.kind) {
-            Some(ast::StmtKind::Expr(_)) => body.pop(),
-            _ => None,
-        }
-    } else {
-        None
-    };
-    let mut ok = match it.run(&body) {
-        Ok(()) => true,
-        Err(e) => {
-            report(it, &e);
+        Err(Failure { kind, msg, line }) => {
+            eprintln!("{}", error_text(&kind, &msg, line));
             false
         }
-    };
-    if let (true, Some(stmt)) = (ok, last) {
-        if let ast::StmtKind::Expr(e) = &stmt.kind {
-            let mut frame = interp::Frame::module();
-            match it.eval(&mut frame, e).and_then(|v| match v {
-                Value::None => Ok(None),
-                v => it.repr(&v).map(Some),
-            }) {
-                Ok(Some(r)) => it.write(&format!("{r}\n")),
-                Ok(None) => {}
-                Err(mut err) => {
-                    err.line = stmt.line;
-                    report(it, &err);
-                    ok = false;
-                }
-            }
-        }
     }
-    it.flush();
-    ok
 }
 
 fn repl() {

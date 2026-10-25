@@ -635,15 +635,14 @@ pub fn call_builtin(it: &mut Interp, b: Builtin, pos: Vec<Value>, kw: Vec<(Str, 
         // time
         B::TimeTime => {
             a.count(it, 0, 0)?;
-            let t = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0.0, |d| d.as_secs_f64());
-            Value::Float(t)
+            Value::Float(crate::host::now_secs())
         }
         B::TimeSleep => {
             a.count(it, 1, 1)?;
             let s = float_arg(it, &a.pos[0], "المدة")?;
             it.flush();
-            if s > 0.0 {
-                std::thread::sleep(std::time::Duration::from_secs_f64(s));
+            if s > 0.0 && !crate::host::sleep(s) {
+                return Err(it.err("KeyboardInterrupt", ""));
             }
             Value::None
         }

@@ -1,0 +1,4 @@
+# The browser build: deep (but legal) recursion needs more than the default 1 MiB stack
+# to reach RecursionError instead of crashing
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=-zstack-size=33554432"]

@@ -72,7 +72,7 @@
 <script>window.ARYTHON_KEYWORDS = {{ keywords | tojson }}; window.ARYTHON_MODE = {{ mode | tojson }};</script>
 <script type="module">
 import { createEditor, toArabicDigits } from '{{ static_url }}/editor.js';
-import { ScriptRunner } from '{{ static_url }}/browser-python.js';
+import { ScriptRunner } from '{{ static_url }}/browser-runtime.js';
 
 // GitHub Pages build: Python runs in the browser instead of on the server
 const runner = window.ARYTHON_MODE === 'browser' ? new ScriptRunner() : null;
@@ -108,7 +108,7 @@ runBtn.addEventListener('click', run);
 async function run() {
     runBtn.disabled = true;
     output.className = 'output';
-    output.textContent = runner && !runner.ready ? 'جارٍ تحميل بايثون في المتصفح… (المرة الأولى أبطأ)' : 'جارٍ التشغيل…';
+    output.textContent = runner && !runner.ready ? 'جارٍ تحميل أرايثون في المتصفح…' : 'جارٍ التشغيل…';
     let errorLine = null;
     try {
         const data = runner ? await runner.run(editor.value, stdin.value) : await (await fetch('/api/run', {
