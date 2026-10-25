@@ -1,6 +1,8 @@
-// Runs Python in the browser (Pyodide in a Web Worker) for the GitHub Pages build.
+// Runs Arython in the browser for the GitHub Pages build: the interpreter (compiler/),
+// compiled to WebAssembly, in a Web Worker (arython-worker.js).
 // BrowserKernel stands in for the notebook's WebSocket and speaks the same messages
 // as kernel_manager.py; ScriptRunner replaces the editor's /api/run.
+import { translateToPython } from './translate.js';
 
 const INTERRUPT_GRACE_MS = 2000;
 const SCRIPT_TIMEOUT_MS = 5000;
@@ -10,18 +12,21 @@ const INPUT_BYTES = 64 * 1024;
 // (provided on GitHub Pages by coi-serviceworker.js)
 const SHARED = typeof SharedArrayBuffer !== 'undefined' && self.crossOriginIsolated;
 
-class PythonWorker {
+// Very deep recursion can exhaust the browser's own stack before Arython's limit of 1000 calls
+const STACK_OVERFLOW = 'RecursionError: تجاوز عمق الاستدعاء ما يتحمله المتصفح';
+
+class ArythonWorker {
     constructor(onMessage, onCrash) {
         this.inputBuffer = SHARED ? new SharedArrayBuffer(8 + INPUT_BYTES) : null;
-        this.interruptBuffer = SHARED ? new SharedArrayBuffer(1) : null;
-        this.worker = new Worker(new URL('pyworker.js', import.meta.url));
-        this.worker.onmessage = e => onMessage(e.data);
-        this.worker.onerror = e => { e.preventDefault(); onCrash(); };
+        this.interruptBuffer = SHARED ? new SharedArrayBuffer(4) : null;
+        this.worker = new Worker(new URL('arython-worker.js', import.meta.url));
+        this.worker.onmessage = e => (e.data.type === 'crashed' ? onCrash(e.data.overflow) : onMessage(e.data));
+        this.worker.onerror = e => { e.preventDefault(); onCrash(false); };
         this.worker.postMessage({ type: 'init', inputBuffer: this.inputBuffer, interruptBuffer: this.interruptBuffer });
     }
 
     post(msg) {
-        if (this.interruptBuffer) new Uint8Array(this.interruptBuffer)[0] = 0;
+        if (this.interruptBuffer) Atomics.store(new Int32Array(this.interruptBuffer), 0, 0);
         this.worker.postMessage(msg);
     }
 
@@ -44,7 +49,9 @@ class PythonWorker {
     // Raises KeyboardInterrupt in the running code; false if the browser can't
     interrupt() {
         if (!this.interruptBuffer) return false;
-        new Uint8Array(this.interruptBuffer)[0] = 2;  // SIGINT
+        const flag = new Int32Array(this.interruptBuffer);
+        Atomics.store(flag, 0, 1);
+        Atomics.notify(flag, 0);  // wakes a time.sleep()
         return true;
     }
 
@@ -60,7 +67,6 @@ export class BrowserKernel {
         this.running = null;     // cell id currently executing
         this.waitingInput = false;
         this.interruptTimer = null;
-        this.translations = [];  // resolvers for translate() calls, in order
         queueMicrotask(() => { this.emit({ type: 'kernel', state: 'loading' }); this.start(); });
     }
 
@@ -68,7 +74,7 @@ export class BrowserKernel {
 
     start() {
         this.ready = false;
-        this.worker = new PythonWorker(msg => this.fromWorker(msg), () => this.crash());
+        this.worker = new ArythonWorker(msg => this.fromWorker(msg), overflow => this.crash(overflow));
     }
 
     fromWorker(msg) {
@@ -82,9 +88,6 @@ export class BrowserKernel {
                 this.readyState = 3;  // CLOSED
                 this.worker.terminate();
                 this.onclose?.();
-                return;
-            case 'translated':
-                this.translations.shift()?.resolve(msg.translated);
                 return;
             case 'input_request':
                 this.waitingInput = true;
@@ -102,8 +105,9 @@ export class BrowserKernel {
         }
     }
 
-    crash() {
-        if (this.running) this.emit({ type: 'error', cell_id: this.running, text: 'KernelDied', line: null });
+    crash(overflow) {
+        const text = overflow ? `${STACK_OVERFLOW}، فأُعيد تشغيل النواة (فُقدت المتغيرات)` : 'KernelDied';
+        if (this.running) this.emit({ type: 'error', cell_id: this.running, text, line: null });
         this.restart('crash');
     }
 
@@ -112,6 +116,7 @@ export class BrowserKernel {
         const [cellId, code] = this.pending.shift();
         this.running = cellId;
         this.emit({ type: 'kernel', state: 'busy' });
+        this.emit({ type: 'started', cell_id: cellId, translated: translateToPython(code) });
         this.worker.post({ type: 'cell', code });
     }
 
@@ -123,7 +128,6 @@ export class BrowserKernel {
         this.pending = [];
         this.running = null;
         this.waitingInput = false;
-        for (const t of this.translations.splice(0)) t.reject(new Error('kernel restarted'));
         for (const id of cancelled) this.emit({ type: 'done', cell_id: id, cancelled: true });
         this.emit({ type: 'kernel', state: 'restarting', reason });
         this.start();
@@ -165,16 +169,21 @@ export class BrowserKernel {
         }
     }
 
-    // Arabic → Python for the .ipynb export (waits for any running cell)
-    translate(codes) {
-        return new Promise((resolve, reject) => {
-            this.translations.push({ resolve, reject });
-            this.worker.post({ type: 'translate', codes });
-        });
+    // Arabic → Python for the .ipynb export
+    async translate(codes) {
+        return codes.map(code => translateToPython(code));
     }
 }
 
 const TIMEOUT_MESSAGE = `خطأ: تجاوز البرنامج الحد الزمني (${SCRIPT_TIMEOUT_MS / 1000} ثوانٍ).`;
+
+// The worker's { output, error: { text, line } | null } as /api/run reports it
+function scriptResult({ output, error }) {
+    if (!error) return { output, error: false };
+    if (error.text === 'KeyboardInterrupt') return { output: TIMEOUT_MESSAGE, error: true };
+    const where = error.line ? `\n(line ${error.line})` : '';
+    return { output: `${output}خطأ في التنفيذ: ${error.text}${where}`, error: true };
+}
 
 export class ScriptRunner {
     constructor() { this.start(); }
@@ -182,19 +191,21 @@ export class ScriptRunner {
     start() {
         this.ready = false;
         this.failed = false;
-        this.worker = new PythonWorker(msg => this.fromWorker(msg), () => this.finish({ output: 'خطأ: توقف بايثون بشكل مفاجئ.', error: true }, true));
+        this.worker = new ArythonWorker(msg => this.fromWorker(msg), overflow => this.finish({
+            output: overflow ? `خطأ في التنفيذ: ${STACK_OVERFLOW}` : 'خطأ: توقف أرايثون بشكل مفاجئ.',
+            error: true,
+        }, true));
     }
 
     fromWorker(msg) {
         if (msg.type === 'ready') this.ready = true;
         else if (msg.type === 'load_error') {
             this.failed = true;  // retried on the next run
-            this.finish({ output: `تعذّر تحميل بايثون: ${msg.text}`, error: true });
+            this.finish({ output: `تعذّر تحميل أرايثون: ${msg.text}`, error: true });
         }
         else if (msg.type === 'script_started') {
-            this.translated = msg.translated;
             this.timer = setTimeout(() => this.timeout(), SCRIPT_TIMEOUT_MS);
-        } else if (msg.type === 'script_result') this.finish(msg);
+        } else if (msg.type === 'script_result') this.finish(scriptResult(msg));
     }
 
     timeout() {
@@ -216,7 +227,7 @@ export class ScriptRunner {
     // Resolves to { translated, output, error } like /api/run
     run(code, stdin) {
         if (this.failed) { this.worker.terminate(); this.start(); }
-        this.translated = '';
+        this.translated = translateToPython(code);
         return new Promise(resolve => {
             this.resolve = resolve;
             this.worker.post({ type: 'script', code, stdin });

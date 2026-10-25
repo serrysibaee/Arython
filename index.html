@@ -242,7 +242,7 @@
 <script>window.ARYTHON_KEYWORDS = {"\u0623\u062e\u064a\u0631\u0627": "finally", "\u0623\u062f\u062e\u0644": "input", "\u0623\u0631\u062c\u0639": "return", "\u0623\u0635\u063a\u0631": "min", "\u0623\u0635\u063a\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a": "\u003c=", "\u0623\u0635\u063a\u0631_\u0645\u0646": "\u003c", "\u0623\u0636\u0641": "append", "\u0623\u0643\u0628\u0631": "max", "\u0623\u0643\u0628\u0631_\u0623\u0648_\u064a\u0633\u0627\u0648\u064a": "\u003e=", "\u0623\u0643\u0628\u0631_\u0645\u0646": "\u003e", "\u0623\u0648": "or", "\u0625\u0630\u0627": "if", "\u0627\u062f\u0645\u062c": "join", "\u0627\u0633\u062a\u0645\u0631\u0627\u0631": "continue", "\u0627\u0633\u062a\u064a\u0631\u0627\u062f": "import", "\u0627\u0637\u0628\u0639": "print", "\u0627\u0641\u0635\u0644": "split", "\u0627\u0643\u0633\u0631": "break", "\u0628\u064a\u0646\u0645\u0627": "while", "\u062d\u0627\u0648\u0644": "try", "\u062e\u0637\u0623": "False", "\u062f\u0627\u0644\u0629": "def", "\u0631\u0641\u0639": "raise", "\u0635\u062d\u064a\u062d": "True", "\u0635\u0646\u0641": "class", "\u0637\u0648\u0644": "len", "\u0639\u0627\u0644\u0645\u064a": "global", "\u0639\u062f\u0627": "except", "\u0639\u062f\u062f_\u0635\u062d\u064a\u062d": "int", "\u0639\u062f\u062f_\u0639\u0634\u0631\u064a": "float", "\u0639\u062f\u0651\u062f": "enumerate", "\u0639\u0646\u0627\u0635\u0631": "items", "\u063a\u064a\u0631": "not", "\u063a\u064a\u0631_\u0645\u062d\u0644\u064a": "nonlocal", "\u0641\u064a": "in", "\u0641\u064a_\u0636\u0645\u0646": "in", "\u0642\u0627\u0626\u0645\u0629": "list", "\u0642\u0627\u0645\u0648\u0633": "dict", "\u0642\u0631\u0651\u0628": "round", "\u0642\u064a\u0645": "values", "\u0643\u0628\u064a\u0631": "upper", "\u0643\u0640": "as", "\u0644\u0627_\u064a\u0633\u0627\u0648\u064a": "!=", "\u0644\u0627\u0634\u064a\u0621": "None", "\u0644\u0643\u0644": "for", "\u0645\u062c\u0645\u0648\u0639": "sum", "\u0645\u0631\u062a\u0628": "sorted", "\u0645\u0637\u0644\u0642": "abs", "\u0645\u0639": "with", "\u0645\u0641\u0627\u062a\u064a\u062d": "keys", "\u0645\u0646": "from", "\u0646\u0635": "str", "\u0646\u0637\u0627\u0642": "range", "\u0646\u0648\u0639": "type", "\u0647\u0648": "is", "\u0648": "and", "\u0648\u0625\u0644\u0627": "else", "\u0648\u0625\u0644\u0627_\u0625\u0630\u0627": "elif", "\u064a\u0633\u0627\u0648\u064a": "==", "\u064a\u0645\u0631": "pass"}; window.ARYTHON_MODE = "browser";</script>
 <script type="module">
 import { createEditor, toArabicDigits } from './static/editor.js';
-import { ScriptRunner } from './static/browser-python.js';
+import { ScriptRunner } from './static/browser-runtime.js';
 
 // GitHub Pages build: Python runs in the browser instead of on the server
 const runner = window.ARYTHON_MODE === 'browser' ? new ScriptRunner() : null;
@@ -278,7 +278,7 @@ runBtn.addEventListener('click', run);
 async function run() {
     runBtn.disabled = true;
     output.className = 'output';
-    output.textContent = runner && !runner.ready ? 'جارٍ تحميل بايثون في المتصفح… (المرة الأولى أبطأ)' : 'جارٍ التشغيل…';
+    output.textContent = runner && !runner.ready ? 'جارٍ تحميل أرايثون في المتصفح…' : 'جارٍ التشغيل…';
     let errorLine = null;
     try {
         const data = runner ? await runner.run(editor.value, stdin.value) : await (await fetch('/api/run', {
